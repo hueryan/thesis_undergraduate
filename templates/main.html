@@ -57,6 +57,8 @@
     </div>
 </header>
 
+<div id="welcome-message" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-lg shadow-lg bg-green-500 text-white opacity-0 transition-opacity duration-500" style="display: none;"></div>
+
 <!-- 主内容区域 -->
 <div class="flex min-h-screen-without-header">
     <!-- 左侧导航栏 -->
@@ -174,6 +176,41 @@
                     </div>
                 `;
             }
+        }
+    });
+    document.addEventListener('DOMContentLoaded', function() {
+        // 检查URL参数中是否有login_success标志
+        const urlParams = new URLSearchParams(window.location.search);
+        const loginSuccess = urlParams.get('login_success');
+
+        if (loginSuccess === 'true') {
+            // 获取用户角色
+            var role = "{{ session.get('role', 0) }}";
+            var welcomeMessage = document.getElementById('welcome-message');
+
+            // 根据角色显示不同的欢迎消息
+            if (role == -1) {
+                welcomeMessage.textContent = "欢迎管理员登录系统";
+            } else {
+                welcomeMessage.textContent = "欢迎用户登录系统";
+            }
+
+            // 显示欢迎消息并添加淡入效果
+            welcomeMessage.style.display = 'block';
+            setTimeout(() => {
+                welcomeMessage.style.opacity = '1';
+            }, 100);
+
+            // 3秒后淡出并隐藏欢迎消息
+            setTimeout(function() {
+                welcomeMessage.style.opacity = '0';
+                setTimeout(() => {
+                    welcomeMessage.style.display = 'none';
+
+                    // 移除URL中的login_success参数
+                    history.replaceState(null, null, window.location.pathname);
+                }, 500);
+            }, 3000);
         }
     });
 </script>

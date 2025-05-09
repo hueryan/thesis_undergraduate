@@ -52,7 +52,6 @@ def index():
 
 
 # 登录路由 - 处理GET和POST请求
-# 登录路由 - 处理GET和POST请求
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -63,45 +62,44 @@ def login():
         hashed_password = hash_password(password)
 
         try:
-            connection = pymysql.connect(
-                host=MYSQL_HOST,
-                port=int(MYSQL_PORT),
-                user=MYSQL_USER,
-                password=MYSQL_PW,
-                database=MYSQL_DB
-            )
+            # 使用get_mysql_connection函数获取连接，确保使用字典游标
+            connection = get_mysql_connection()
             with connection.cursor() as cursor:
-                # 使用哈希后的密码进行查询
-                select_sql = f"SELECT * FROM {MYSQL_USER_TABLE} WHERE username = %s AND password = %s AND status = 200"
-                cursor.execute(select_sql, (username, hashed_password))
+                # 查询用户信息
+                check_user_sql = f"SELECT * FROM {MYSQL_USER_TABLE} WHERE username = %s"
+                cursor.execute(check_user_sql, (username,))
                 user = cursor.fetchone()
+
                 if user:
-                    # 修正：设置session['user_id']
-                    session['user_id'] = user[0]  # 假设user[0]是用户ID
-                    session['user'] = username
-                    role = user[4]
-                    session['role'] = role
-                    if role == -1:
-                        flash('欢迎管理员登录系统', 'success')
-                    elif role == 0:
-                        flash('欢迎用户登录系统', 'success')
-                    return redirect(url_for('main'))
-                else:
-                    check_user_sql = f"SELECT * FROM {MYSQL_USER_TABLE} WHERE username = %s"
-                    cursor.execute(check_user_sql, (username,))
-                    existing_user = cursor.fetchone()
-                    if existing_user:
-                        flash('该用户已被禁用，请联系管理员', 'error')
-                    else:
-                        flash('用户名或密码错误', 'error')
-                    return render_template('login.html', username=username, password=password)
+                    # 用户存在，检查密码和状态
+                    # 通过字段名访问密码，而不是索引位置
+                    if user['password'] == hashed_password:  # 密码匹配
+                        if user['status'] == 200:  # 状态为200
+                            session['user_id'] = user['id']
+                            session['user'] = username
+                            role = user['role']
+                            session['role'] = role
+                            if role == -1:
+                                flash('欢迎管理员登录系统', 'success')
+                            elif role == 0:
+                                flash('欢迎用户登录系统', 'success')
+                            return redirect(url_for('main') + '?login_success=true')
+                        else:  # 状态非200
+                            flash('该用户已被禁用，请联系管理员', 'error')
+                    else:  # 密码不匹配
+                        flash('密码错误', 'error')
+                else:  # 用户不存在
+                    flash('用户不存在，请注册', 'error')
+
+                return render_template('login.html', username=username)
         except pymysql.Error as e:
             flash(f'登录失败，错误信息: {str(e)}', 'error')
-            return render_template('login.html', username=username, password=password)
+            return render_template('login.html', username=username)
         finally:
             if 'connection' in locals() and connection:
                 connection.close()
     return render_template('login.html')
+
 
 # 邀请码表操作
 def validate_invitation_code(code):
@@ -155,10 +153,12 @@ def register():
                 cursor.execute(sql, (username, email))
                 existing_user = cursor.fetchone()
                 if existing_user:
-                    if existing_user.get('username') == username:
+                    if existing_user.get('username') == username and existing_user.get('email') != email:
                         errors['username'] = '用户名已存在'
-                    if existing_user.get('email') == email:
+                    elif existing_user.get('email') == email and existing_user.get('username') != username:
                         errors['email'] = '邮箱已被注册'
+                    elif existing_user.get('email') == email and existing_user.get('username') == username:
+                        errors['user_email'] = '用户名已存在，邮箱已被注册'
 
         # 验证邀请码 (如果提供)
         if invitation_code:
