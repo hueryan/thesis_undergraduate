@@ -1,0 +1,42 @@
+{% block content %}
+    <h2 class="text-2xl font-bold text-gray-800 mb-4">算法模板列表</h2>
+    <p class="text-gray-600">查看和管理各种算法模板</p>
+
+    <div class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for template in algorithm_templates %}
+            <div class="bg-white rounded-xl shadow-md p-6 transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-800">{{ template.name }}</h3>
+                    <span class="text-xs font-medium bg-blue-100 text-blue-800 px-2.5 py-0.5 rounded">
+                        {{ template.category }}
+                    </span>
+                </div>
+                <div class="text-sm text-gray-600 mb-4">
+                    <p class="mb-2"><i class="fa fa-code mr-2"></i>语言：{{ template.language }}</p>
+                    <p class="mb-2"><i class="fa fa-calendar mr-2"></i>更新于：{{ template.updated_at }}</p>
+                    <p><i class="fa fa-info-circle mr-2"></i>描述：{{ template.description or '无描述' }}</p>
+                </div>
+                <div class="flex justify-end">
+                    <button class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors" onclick="viewAlgorithm('{{ template.id }}')">
+                        查看详情
+                    </button>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- 分页控件 -->
+    <div class="mt-8 flex justify-between items-center">
+        <div class="text-sm text-gray-500">
+            显示 {{ pagination.offset + 1 }} 到 {{ pagination.offset + algorithm_templates|length }} 条，共 {{ pagination.total }} 条
+        </div>
+        <div class="flex space-x-2">
+            <button class="px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" {% if not pagination.has_prev %}disabled{% endif %}>
+                <i class="fa fa-chevron-left"></i>
+            </button>
+            <button class="px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" {% if not pagination.has_next %}disabled{% endif %}>
+                <i class="fa fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+{% endblock %}

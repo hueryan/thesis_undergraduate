@@ -1,0 +1,36 @@
+{% extends "admin/admin_base.html" %}
+
+{% block content %}
+    <h2 class="text-2xl font-bold text-gray-800 mb-4">管理算法模板</h2>
+
+    <a href="{{ url_for('admin_create_algorithm_template') }}" class="inline-block mb-6 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition">
+        <i class="fa fa-plus mr-2"></i>新建模板
+    </a>
+
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead>
+                <tr>
+                    <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                    <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">名称</th>
+                    <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">创建者</th>
+                    <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">创建时间</th>
+                    <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for template in templates %}
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ template.id }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ template.name }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ template.created_by }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ template.created_at }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <a href="{{ url_for('admin_view_algorithm_template', template_id=template.id) }}" class="text-primary hover:text-primary/80">查看</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

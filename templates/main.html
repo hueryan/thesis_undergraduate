@@ -83,20 +83,33 @@
         <ul class="space-y-2">
             <li>
                 <a href="{{ url_for('knowledge_graph') }}"
-                   class="flex items-center p-2 rounded-lg bg-primary/10 text-primary">
+                   class="flex items-center p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
                     <i class="fa fa-sitemap mr-2"></i>
                     <span>知识图谱</span>
                 </a>
             </li>
             <li>
-                <a href="#" class="flex items-center p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
+                <a href="{{ url_for('algorithm_templates') }}"
+                   class="flex items-center p-2 rounded-lg bg-primary/10 text-primary">
                     <i class="fa fa-code mr-2"></i>
                     <span>算法模板</span>
                 </a>
             </li>
+            <!-- 仅管理员可见的菜单项 -->
+            <!-- main.html 中的管理员菜单项 -->
+            {% if session.get('role') == -1 %}
+                <li>
+                    <a href="{{ url_for('admin_algorithm_templates') }}"
+                       class="flex items-center p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
+                        <i class="fa fa-cog mr-2"></i>
+                        <span>算法模板管理</span>
+                    </a>
+                </li>
+            {% endif %}
         </ul>
     </aside>
     <!-- 主内容 -->
+
     <main class="flex-1 p-6 overflow-y-auto">
         <div class="bg-white rounded-xl shadow-md p-6 h-full" id="content-area">
             {% if leaf_nodes %}
@@ -118,6 +131,10 @@
 
         navLinks.forEach(link => {
             link.addEventListener('click', function (e) {
+                // 允许管理员链接正常跳转
+                if (this.getAttribute('href').startsWith('/admin/')) {
+                    return;
+                }
                 e.preventDefault();
 
                 // 更新URL
@@ -144,7 +161,7 @@
             const contentArea = document.querySelector('#content-area');
 
             if (target === '知识图谱') {
-                // 使用AJAX加载知识图谱内容，并设置X-Requested-With头
+                // 知识图谱加载逻辑保持不变
                 fetch('/main/knowledge-graph', {
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest'
@@ -152,7 +169,6 @@
                 })
                     .then(response => response.text())
                     .then(html => {
-                        // 直接替换内容区域
                         contentArea.innerHTML = html;
                     })
                     .catch(error => {
@@ -163,35 +179,41 @@
                         `;
                     });
             } else if (target === '算法模板') {
-                // 保持原有算法模板加载逻辑不变
-                contentArea.innerHTML = `
-                    <h2 class="text-2xl font-bold text-gray-800 mb-4">算法模板列表</h2>
-                    <p class="text-gray-600">查看和管理各种算法模板</p>
-                    <div class="mt-6 bg-gray-50 rounded-lg p-4 h-[calc(100%-6rem)] overflow-auto">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <!-- 算法模板卡片 -->
-                            <div class="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow">
-                                <h3 class="font-semibold text-lg mb-2">排序算法</h3>
-                                <p class="text-gray-600 text-sm mb-3">常见排序算法实现与演示</p>
-                                <div class="flex justify-between items-center">
-                                    <span class="text-xs text-gray-500">更新于 2025-05-05</span>
-                                    <button class="px-3 py-1 bg-primary/10 text-primary text-sm rounded hover:bg-primary/20 transition">查看详情</button>
-                                </div>
-                            </div>
-
-                            <!-- 更多算法模板卡片 -->
-                            <div class="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow">
-                                <h3 class="font-semibold text-lg mb-2">图算法</h3>
-                                <p class="text-gray-600 text-sm mb-3">图的遍历、最短路径等算法实现</p>
-                                <div class="flex justify-between items-center">
-                                    <span class="text-xs text-gray-500">更新于 2025-05-05</span>
-                                    <button class="px-3 py-1 bg-primary/10 text-primary text-sm rounded hover:bg-primary/20 transition">查看详情</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
+                // 加载算法模板内容
+                fetch('/main/algorithm-templates', {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                    .then(response => response.text())
+                    .then(html => {
+                        contentArea.innerHTML = html;
+                    })
+                    .catch(error => {
+                        console.error('加载算法模板失败:', error);
+                        contentArea.innerHTML = `
+                            <h2 class="text-2xl font-bold text-gray-800 mb-4">算法模板列表</h2>
+                            <p class="text-gray-600 text-red-500">加载算法模板失败: ${error.message}</p>
+                        `;
+                    });
             }
+        }
+
+        // 处理浏览器前进/后退按钮
+        window.addEventListener('popstate', function () {
+            const path = window.location.pathname;
+
+            if (path.endsWith('/knowledge-graph')) {
+                document.querySelector('aside ul li a:contains("知识图谱")').click();
+            } else if (path.endsWith('/algorithm-templates')) {
+                document.querySelector('aside ul li a:contains("算法模板")').click();
+            }
+        });
+
+        // 初始加载当前页面内容
+        const initialPath = window.location.pathname;
+        if (initialPath.endsWith('/algorithm-templates')) {
+            loadContent('算法模板');
         }
     });
 

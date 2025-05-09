@@ -1,0 +1,138 @@
+{% extends "admin/admin_base.html" %}
+
+{% block content %}
+    <div class="max-w-4xl mx-auto">
+        <!-- 头部信息 -->
+        <div class="mb-8 border-b border-gray-200 pb-4">
+            <h1 class="text-2xl font-bold text-gray-800">{{ template.name }}</h1>
+            <div class="mt-2 flex items-center space-x-4 text-sm text-gray-500">
+                <span><i class="fa fa-user mr-1"></i>{{ template.created_by }}</span>
+                <span><i class="fa fa-clock-o mr-1"></i>{{ template.created_at }}</span>
+            </div>
+        </div>
+
+        <!-- Markdown内容容器 -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 admin-markdown-content"
+             id="markdown-content">
+            内容加载中...
+        </div>
+    </div>
+
+    <!-- 依赖库 -->
+    <script src="https://cdn.jsdelivr.net/npm/marked@5.1.1/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.5/purify.min.js"></script>
+
+    <style>
+        /* 继承管理后台核心样式 */
+        .admin-markdown-content {
+            font-family: 'Inter', system-ui, sans-serif;
+            color: #1f2937;
+            line-height: 1.6;
+        }
+
+        .admin-markdown-content h1 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            margin: 1.5rem 0 1rem;
+            color: #111827;
+        }
+
+        .admin-markdown-content h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 1.25rem 0 0.75rem;
+            color: #111827;
+        }
+
+        .admin-markdown-content pre {
+            background: #0d1117 !important;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+            position: relative;
+        }
+
+        .admin-markdown-content code:not(pre code) {
+            background: #f3f4f6;
+            padding: 0.2em 0.4em;
+            border-radius: 0.25rem;
+            color: #dc2626;
+        }
+
+        .admin-markdown-content blockquote {
+            border-left: 4px solid #e5e7eb;
+            padding-left: 1rem;
+            color: #6b7280;
+            margin: 1rem 0;
+        }
+    </style>
+
+    <script>
+        // 增强版初始化逻辑
+        function initMarkdownRender() {
+            try {
+                // 获取原始内容（确保使用正确的Jinja转义）
+                const rawMarkdown = {{ template.code|tojson|safe }};
+
+                // 安全过滤
+                const cleanMarkdown = DOMPurify.sanitize(rawMarkdown);
+
+                // 配置Markdown解析
+                marked.setOptions({
+                    highlight: function(code, lang) {
+                        const validLang = hljs.getLanguage(lang) ? lang : 'plaintext';
+                        return hljs.highlight(code, {
+                            language: validLang,
+                            ignoreIllegals: true
+                        }).value;
+                    },
+                    breaks: true,
+                    gfm: true
+                });
+
+                // 转换为HTML
+                const htmlContent = marked.parse(cleanMarkdown);
+
+                // 插入容器
+                const container = document.getElementById('markdown-content');
+                container.innerHTML = htmlContent;
+
+                // 应用代码高亮
+                hljs.highlightAll();
+
+                // 添加复制按钮
+                container.querySelectorAll('pre').forEach(pre => {
+                    const btn = document.createElement('button');
+                    btn.className = 'absolute right-3 top-2 text-gray-300 hover:text-white transition';
+                    btn.innerHTML = '<i class="fa fa-copy text-sm"></i>';
+                    btn.onclick = () => {
+                        navigator.clipboard.writeText(pre.querySelector('code').innerText);
+                        btn.innerHTML = '<i class="fa fa-check text-sm"></i>';
+                        setTimeout(() => btn.innerHTML = '<i class="fa fa-copy text-sm"></i>', 2000);
+                    };
+                    pre.style.position = 'relative';
+                    pre.appendChild(btn);
+                });
+
+            } catch (error) {
+                console.error('渲染错误:', error);
+                document.getElementById('markdown-content').innerHTML = `
+                    <div class="p-4 bg-red-50 text-red-600 rounded-lg">
+                        <i class="fa fa-exclamation-circle mr-2"></i>内容渲染失败：${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // 确保页面完全加载后执行
+        if (document.readyState === 'complete') {
+            initMarkdownRender();
+        } else {
+            document.addEventListener('DOMContentLoaded', initMarkdownRender);
+        }
+    </script>
+{% endblock %}

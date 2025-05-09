@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session
-from configs.database_config import MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PW, MYSQL_DB, MYSQL_USER_TABLE
+from configs.database_config import MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PW, MYSQL_DB, MYSQL_USER_TABLE, MYSQL_INVITATION_CODES_TABLE, MYSQL_ALGORITHM_TEMPLATES_TABLE
 from data_structure_kg_workspace.config_neo4j import NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD
 import pymysql
 import re
@@ -9,7 +9,7 @@ from neo4j import GraphDatabase
 import secrets
 from datetime import datetime
 import hashlib  # 用于密码哈希
-
+ALGORITHM_MD_DIR = 'template_1.md'
 load_dotenv()
 
 app = Flask(__name__)
@@ -105,14 +105,14 @@ def login():
 def validate_invitation_code(code):
     with get_mysql_connection() as conn:
         with conn.cursor() as cursor:
-            sql = "SELECT * FROM invitation_codes WHERE code = %s AND expiration_date > NOW() AND used_count < max_uses"
+            sql = f"SELECT * FROM {MYSQL_INVITATION_CODES_TABLE} WHERE code = %s AND expiration_date > NOW() AND used_count < max_uses"
             cursor.execute(sql, (code,))
             return cursor.fetchone()
 
 def increment_invitation_usage(code):
     with get_mysql_connection() as conn:
         with conn.cursor() as cursor:
-            sql = "UPDATE invitation_codes SET used_count = used_count + 1 WHERE code = %s"
+            sql = f"UPDATE {MYSQL_INVITATION_CODES_TABLE} SET used_count = used_count + 1 WHERE code = %s"
             cursor.execute(sql, (code,))
             conn.commit()
 
@@ -339,6 +339,144 @@ def knowledge_graph():
         return redirect(url_for('main'))
 
 
+# app.py
+@app.route('/main/algorithm-templates')
+def algorithm_templates():
+    # 确保用户已登录
+    if not is_user_logged_in():
+        flash('请先登录')
+        return redirect(url_for('login'))
+
+    try:
+        # 模拟从数据库获取算法模板数据
+        # 实际应用中，这里应该查询数据库获取真实数据
+        algorithm_templates = [
+            {
+                'id': 1,
+                'name': '冒泡排序',
+                'category': '排序算法',
+                'language': 'Python',
+                'updated_at': '2025-05-05',
+                'description': '简单直观的排序算法，时间复杂度O(n²)'
+            },
+            {
+                'id': 2,
+                'name': '快速排序',
+                'category': '排序算法',
+                'language': 'Python',
+                'updated_at': '2025-05-05',
+                'description': '高效的分治排序算法，平均时间复杂度O(nlogn)'
+            },
+            {
+                'id': 3,
+                'name': '深度优先搜索',
+                'category': '图算法',
+                'language': 'Java',
+                'updated_at': '2025-05-05',
+                'description': '图的遍历算法，用于遍历或搜索树或图'
+            },
+            # 可以添加更多算法模板...
+        ]
+
+        # 分页信息
+        pagination = {
+            'offset': 0,
+            'limit': 9,
+            'total': len(algorithm_templates),
+            'has_prev': False,
+            'has_next': False
+        }
+
+        # 判断是否是AJAX请求
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            # 只返回内容片段
+            return render_template('algorithm_templates.html',
+                                   algorithm_templates=algorithm_templates,
+                                   pagination=pagination)
+        else:
+            # 返回完整页面
+            return render_template('main.html',
+                                   algorithm_templates=algorithm_templates,
+                                   pagination=pagination)
+
+    except Exception as e:
+        flash(f'获取算法模板数据失败: {str(e)}', 'error')
+        return redirect(url_for('main'))
+
+def create_algorithm_template(name, code, created_by):
+    """创建新的算法模板"""
+    with get_mysql_connection() as conn:
+        with conn.cursor() as cursor:
+            sql = f"INSERT INTO {MYSQL_ALGORITHM_TEMPLATES_TABLE} (name, code, created_by, created_at) VALUES (%s, %s, %s, %s)"
+            cursor.execute(sql, (name, code, created_by, datetime.now()))
+            conn.commit()
+            return cursor.lastrowid
+
+def get_algorithm_template(template_id):
+    """获取单个算法模板"""
+    with get_mysql_connection() as conn:
+        with conn.cursor() as cursor:
+            sql = f"SELECT * FROM {MYSQL_ALGORITHM_TEMPLATES_TABLE} WHERE id = %s"
+            cursor.execute(sql, (template_id,))
+            return cursor.fetchone()
+
+def get_all_algorithm_templates():
+    """获取所有算法模板"""
+    with get_mysql_connection() as conn:
+        with conn.cursor() as cursor:
+            sql = f"SELECT * FROM {MYSQL_ALGORITHM_TEMPLATES_TABLE} ORDER BY created_at DESC"
+            cursor.execute(sql)
+            return cursor.fetchall()
+
+
+@app.route('/admin/algorithm-templates', methods=['GET'])
+def admin_algorithm_templates():
+    """管理员查看所有算法模板"""
+    if not is_user_logged_in() or session.get('role') != -1:
+        flash('权限不足', 'error')
+        return redirect(url_for('main'))
+
+    templates = get_all_algorithm_templates()
+    return render_template('admin/algorithm_templates_list.html', templates=templates)
+
+
+@app.route('/admin/algorithm-templates/new', methods=['GET', 'POST'])
+def admin_create_algorithm_template():
+    """管理员创建新算法模板"""
+    if not is_user_logged_in() or session.get('role') != -1:
+        flash('权限不足', 'error')
+        return redirect(url_for('main'))
+
+    if request.method == 'POST':
+        name = request.form.get('name')
+        code = request.form.get('code')
+        created_by = session.get('user')
+
+        if not name or not code:
+            flash('名称和代码不能为空', 'error')
+            return redirect(request.url)
+
+        create_algorithm_template(name, code, created_by)
+        flash('算法模板创建成功', 'success')
+        return redirect(url_for('admin_algorithm_templates'))
+
+    return render_template('admin/algorithm_template_form.html')
+
+
+@app.route('/admin/algorithm-templates/<int:template_id>', methods=['GET'])
+def admin_view_algorithm_template(template_id):
+    """管理员查看算法模板详情"""
+    if not is_user_logged_in() or session.get('role') != -1:
+        flash('权限不足', 'error')
+        return redirect(url_for('main'))
+
+    template = get_algorithm_template(template_id)
+    if not template:
+        flash('模板不存在', 'error')
+        return redirect(url_for('admin_algorithm_templates'))
+    # template.code已经包含了从数据库中获取的内容
+
+    return render_template('admin/algorithm_template_view.html', template=template)
 
 # 运行应用
 if __name__ == '__main__':

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理员面板 - 数据结构学习系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+
+    <!-- 配置Tailwind主题 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6366f1',
+                        secondary: '#8b5cf6',
+                        dark: '#1e293b',
+                        light: '#f8fafc',
+                        admin: '#10b981', // 绿色系作为管理员主题色
+                        success: '#10b981',
+                        danger: '#ef4444',
+                        warning: '#f59e0b',
+                        info: '#3b82f6',
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'card': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                        'card-hover': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .card-shadow {
+                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+            }
+            .input-focus {
+                @apply focus:ring-2 focus:ring-primary/50 focus:border-primary transition duration-200;
+            }
+            .sidebar-link {
+                @apply flex items-center p-3 rounded-lg text-gray-700 hover:bg-primary/10 hover:text-primary transition-all duration-200;
+            }
+            .sidebar-link.active {
+                @apply bg-primary/10 text-primary font-medium;
+            }
+            .btn-primary {
+                @apply px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition transform hover:-translate-y-0.5 hover:shadow-lg;
+            }
+            .btn-secondary {
+                @apply px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition transform hover:-translate-y-0.5 hover:shadow-lg;
+            }
+            .btn-danger {
+                @apply px-4 py-2 bg-danger text-white rounded-lg hover:bg-danger/90 transition transform hover:-translate-y-0.5 hover:shadow-lg;
+            }
+            .btn-success {
+                @apply px-4 py-2 bg-success text-white rounded-lg hover:bg-success/90 transition transform hover:-translate-y-0.5 hover:shadow-lg;
+            }
+            .form-input {
+                @apply w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition duration-200;
+            }
+        }
+    </style>
+</head>
+<body class="font-inter bg-gray-50 text-gray-800 min-h-screen flex flex-col">
+    <!-- 顶部导航栏 -->
+    <header class="bg-white shadow-md sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fa fa-cogs text-admin text-2xl"></i>
+                <h1 class="text-xl font-bold text-gray-800">管理员面板</h1>
+            </div>
+
+            <!-- 用户信息区域 -->
+            <div class="relative group">
+                <div class="flex items-center space-x-2 cursor-pointer">
+                    <span class="px-2 py-1 rounded bg-admin/10 text-admin text-sm font-medium">管理员</span>
+                    <span class="text-gray-800 font-medium">{{ session.get('user', '未登录') }}</span>
+                    <i class="fa fa-chevron-down text-xs text-gray-500 group-hover:rotate-180 transition-transform duration-200"></i>
+                </div>
+
+                <!-- 下拉菜单 -->
+                <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-right group-hover:translate-y-0 translate-y-2">
+                    <a href="{{ url_for('change_password') }}"
+                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                        <i class="fa fa-key mr-2"></i>重置密码
+                    </a>
+                    <a href="{{ url_for('logout') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                        <i class="fa fa-sign-out mr-2"></i>退出登录
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区域 -->
+    <div class="flex min-h-screen">
+        <!-- 左侧导航栏 -->
+        <aside class="w-64 bg-white shadow-md p-6 h-screen sticky top-0 overflow-y-auto">
+            <h2 class="text-lg font-bold text-gray-800 mb-6">管理菜单</h2>
+            <ul class="space-y-1">
+                <li>
+                    <a href="{{ url_for('admin_algorithm_templates') }}" class="sidebar-link {% if request.endpoint == 'admin_algorithm_templates' %}active{% endif %}">
+                        <i class="fa fa-code mr-3"></i>
+                        <span>算法模板管理</span>
+                    </a>
+                </li>
+                <!-- 可以添加更多管理菜单项 -->
+                <li>
+                    <a href="#" class="sidebar-link">
+                        <i class="fa fa-users mr-3"></i>
+                        <span>用户管理</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="sidebar-link">
+                        <i class="fa fa-bar-chart mr-3"></i>
+                        <span>系统统计</span>
+                    </a>
+                </li>
+            </ul>
+        </aside>
+
+        <!-- 右侧内容区 -->
+        <main class="flex-1 p-6 overflow-y-auto">
+            <div class="max-w-7xl mx-auto">
+                <!-- 页面标题 -->
+                <div class="mb-8">
+                    <h1 class="text-3xl font-bold text-gray-800 mb-2">{{ page_title }}</h1>
+                    <p class="text-gray-600">{{ page_description }}</p>
+                </div>
+
+                <!-- 内容区域 -->
+                <div class="bg-white rounded-xl shadow-card p-6 mb-6">
+                    {% block content %}{% endblock %}
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // 添加动画效果
+        document.addEventListener('DOMContentLoaded', function() {
+            // 为卡片添加悬停效果
+            const cards = document.querySelectorAll('.card-hover');
+            cards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.classList.add('shadow-card-hover', '-translate-y-1');
+                });
+                card.addEventListener('mouseleave', function() {
+                    this.classList.remove('shadow-card-hover', '-translate-y-1');
+                });
+            });
+
+            // 平滑滚动
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>
