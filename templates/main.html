@@ -39,135 +39,134 @@
 </head>
 
 <body class="font-inter bg-gray-50 text-gray-800 min-h-screen flex flex-col">
-    <!-- 顶部导航栏 -->
-    <header class="bg-white nav-shadow sticky top-0 z-50">
-        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
-            <div class="flex items-center space-x-2">
-                <i class="fa fa-sitemap text-primary text-2xl"></i>
-                <h1 class="text-xl font-bold text-gray-800">知识图谱平台</h1>
-            </div>
-
-            <!-- 用户信息区域 -->
-            <div class="flex items-center space-x-2">
-                {% if session.get('role') == -1 %}
-                    <span class="px-2 py-1 rounded bg-admin/10 text-admin text-sm font-medium">管理员</span>
-                {% endif %}
-                <span class="text-gray-800 font-medium">{{ session.get('user', '未登录') }}</span>
-            </div>
+<!-- 顶部导航栏 -->
+<header class="bg-white nav-shadow sticky top-0 z-50">
+    <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+        <div class="flex items-center space-x-2">
+            <i class="fa fa-sitemap text-primary text-2xl"></i>
+            <h1 class="text-xl font-bold text-gray-800">知识图谱平台</h1>
         </div>
-    </header>
 
-    <!-- 主内容区域 -->
-    <div class="flex min-h-screen-without-header">
-        <!-- 左侧导航栏 -->
-        <aside class="w-64 bg-white shadow-md p-6 h-screen sticky top-0 overflow-y-auto">
-            <h2 class="text-lg font-bold text-gray-800 mb-4">导航菜单</h2>
-            <ul class="space-y-2">
-                <li>
-                    <a href="#" class="flex items-center p-2 rounded-lg bg-primary/10 text-primary">
-                        <i class="fa fa-sitemap mr-2"></i>
-                        <span>知识图谱</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="#" class="flex items-center p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
-                        <i class="fa fa-code mr-2"></i>
-                        <span>算法模板</span>
-                    </a>
-                </li>
-            </ul>
-        </aside>
-
-        <!-- 主内容 -->
-        <main class="flex-1 p-6 overflow-y-auto">
-            <div class="bg-white rounded-xl shadow-md p-6 h-full">
-                <h2 class="text-2xl font-bold text-gray-800 mb-4">知识图谱节点展示</h2>
-                <p class="text-gray-600">探索知识图谱中的各个节点，了解相关概念和关系</p>
-
-                <!-- 知识图谱内容区域 -->
-                <div class="mt-6 bg-gray-50 rounded-lg p-4 h-[calc(100%-6rem)] overflow-auto">
-                    <!-- 这里将显示实际的知识图谱可视化 -->
-                    <div class="flex items-center justify-center h-full text-gray-400">
-                        <i class="fa fa-spinner fa-spin text-4xl mr-4"></i>
-                        <span>加载知识图谱中...</span>
-                    </div>
-                </div>
-            </div>
-        </main>
+        <!-- 用户信息区域 -->
+        <div class="flex items-center space-x-2">
+            {% if session.get('role') == -1 %}
+                <span class="px-2 py-1 rounded bg-admin/10 text-admin text-sm font-medium">管理员</span>
+            {% endif %}
+            <span class="text-gray-800 font-medium">{{ session.get('user', '未登录') }}</span>
+        </div>
     </div>
+</header>
 
-    <script>
-        // 导航栏交互逻辑
-        document.addEventListener('DOMContentLoaded', function () {
-            // 处理左侧导航栏点击
-            const navLinks = document.querySelectorAll('aside ul li a');
+<!-- 主内容区域 -->
+<div class="flex min-h-screen-without-header">
+    <!-- 左侧导航栏 -->
+    <aside class="w-64 bg-white shadow-md p-6 h-screen sticky top-0 overflow-y-auto">
+        <h2 class="text-lg font-bold text-gray-800 mb-4">导航菜单</h2>
+        <ul class="space-y-2">
+            <li>
+                <a href="{{ url_for('knowledge_graph') }}"
+                   class="flex items-center p-2 rounded-lg bg-primary/10 text-primary">
+                    <i class="fa fa-sitemap mr-2"></i>
+                    <span>知识图谱</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" class="flex items-center p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
+                    <i class="fa fa-code mr-2"></i>
+                    <span>算法模板</span>
+                </a>
+            </li>
+        </ul>
+    </aside>
+    <!-- 主内容 -->
+    <main class="flex-1 p-6 overflow-y-auto">
+        <div class="bg-white rounded-xl shadow-md p-6 h-full">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">知识图谱节点展示</h2>
 
-            navLinks.forEach(link => {
-                link.addEventListener('click', function (e) {
-                    e.preventDefault();
+        </div>
+    </main>
+</div>
 
-                    // 移除所有选中状态
-                    navLinks.forEach(item => {
-                        item.classList.remove('bg-primary/10', 'text-primary');
-                        item.classList.add('text-gray-600');
-                    });
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // 处理左侧导航栏点击
+        const navLinks = document.querySelectorAll('aside ul li a');
 
-                    // 添加当前选中状态
-                    this.classList.remove('text-gray-600');
-                    this.classList.add('bg-primary/10', 'text-primary');
+        navLinks.forEach(link => {
+            link.addEventListener('click', function (e) {
+                e.preventDefault();
 
-                    // 根据点击的链接加载对应的内容
-                    const target = this.textContent.trim();
-                    loadContent(target);
+                // 更新URL
+                history.pushState(null, null, this.getAttribute('href'));
+
+                // 移除所有选中状态
+                navLinks.forEach(item => {
+                    item.classList.remove('bg-primary/10', 'text-primary');
+                    item.classList.add('text-gray-600');
                 });
+
+                // 添加当前选中状态
+                this.classList.remove('text-gray-600');
+                this.classList.add('bg-primary/10', 'text-primary');
+
+                // 根据点击的链接加载对应的内容
+                const target = this.textContent.trim();
+                loadContent(target);
             });
-
-            // 加载内容的函数
-            function loadContent(target) {
-                const contentArea = document.querySelector('main > div');
-
-                if (target === '知识图谱') {
-                    contentArea.innerHTML = `
-                        <h2 class="text-2xl font-bold text-gray-800 mb-4">知识图谱节点展示</h2>
-                        <p class="text-gray-600">探索知识图谱中的各个节点，了解相关概念和关系</p>
-                        <div class="mt-6 bg-gray-50 rounded-lg p-4 h-[calc(100%-6rem)] overflow-auto">
-                            <div class="flex items-center justify-center h-full text-gray-400">
-                                <i class="fa fa-spinner fa-spin text-4xl mr-4"></i>
-                                <span>加载知识图谱中...</span>
-                            </div>
-                        </div>
-                    `;
-                } else if (target === '算法模板') {
-                    contentArea.innerHTML = `
-                        <h2 class="text-2xl font-bold text-gray-800 mb-4">算法模板列表</h2>
-                        <p class="text-gray-600">查看和管理各种算法模板</p>
-                        <div class="mt-6 bg-gray-50 rounded-lg p-4 h-[calc(100%-6rem)] overflow-auto">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <!-- 算法模板卡片 -->
-                                <div class="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow">
-                                    <h3 class="font-semibold text-lg mb-2">排序算法</h3>
-                                    <p class="text-gray-600 text-sm mb-3">常见排序算法实现与演示</p>
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-xs text-gray-500">更新于 2023-05-15</span>
-                                        <button class="px-3 py-1 bg-primary/10 text-primary text-sm rounded hover:bg-primary/20 transition">查看详情</button>
-                                    </div>
-                                </div>
-
-                                <!-- 更多算法模板卡片 -->
-                                <div class="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow">
-                                    <h3 class="font-semibold text-lg mb-2">图算法</h3>
-                                    <p class="text-gray-600 text-sm mb-3">图的遍历、最短路径等算法实现</p>
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-xs text-gray-500">更新于 2023-06-20</span>
-                                        <button class="px-3 py-1 bg-primary/10 text-primary text-sm rounded hover:bg-primary/20 transition">查看详情</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }
-            }
         });
-    </script>
+
+        // 加载内容的函数
+        function loadContent(target) {
+            const contentArea = document.querySelector('main > div');
+
+            if (target === '知识图谱') {
+                // 使用AJAX加载知识图谱内容
+                fetch('/main/knowledge-graph')
+                    .then(response => response.text())
+                    .then(html => {
+                        // 直接替换内容区域
+                        contentArea.innerHTML = html;
+                    })
+                    .catch(error => {
+                        console.error('加载知识图谱失败:', error);
+                        contentArea.innerHTML = `
+                            <h2 class="text-2xl font-bold text-gray-800 mb-4">知识图谱节点展示</h2>
+                            <p class="text-gray-600 text-red-500">加载知识图谱失败: ${error.message}</p>
+                        `;
+                    });
+            } else if (target === '算法模板') {
+                // 保持原有算法模板加载逻辑不变
+                contentArea.innerHTML = `
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">算法模板列表</h2>
+                    <p class="text-gray-600">查看和管理各种算法模板</p>
+                    <div class="mt-6 bg-gray-50 rounded-lg p-4 h-[calc(100%-6rem)] overflow-auto">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- 算法模板卡片 -->
+                            <div class="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow">
+                                <h3 class="font-semibold text-lg mb-2">排序算法</h3>
+                                <p class="text-gray-600 text-sm mb-3">常见排序算法实现与演示</p>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs text-gray-500">更新于 2023-05-15</span>
+                                    <button class="px-3 py-1 bg-primary/10 text-primary text-sm rounded hover:bg-primary/20 transition">查看详情</button>
+                                </div>
+                            </div>
+
+                            <!-- 更多算法模板卡片 -->
+                            <div class="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow">
+                                <h3 class="font-semibold text-lg mb-2">图算法</h3>
+                                <p class="text-gray-600 text-sm mb-3">图的遍历、最短路径等算法实现</p>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs text-gray-500">更新于 2023-06-20</span>
+                                    <button class="px-3 py-1 bg-primary/10 text-primary text-sm rounded hover:bg-primary/20 transition">查看详情</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+    });
+</script>
+
 </body>
 </html>
