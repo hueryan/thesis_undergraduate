@@ -80,9 +80,15 @@
     </aside>
     <!-- 主内容 -->
     <main class="flex-1 p-6 overflow-y-auto">
-        <div class="bg-white rounded-xl shadow-md p-6 h-full">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">知识图谱节点展示</h2>
-
+        <div class="bg-white rounded-xl shadow-md p-6 h-full" id="content-area">
+            {% if leaf_nodes %}
+                <!-- 直接渲染知识图谱内容 -->
+                {% include 'node_show.html' %}
+            {% else %}
+                <!-- 默认内容 -->
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">知识图谱节点展示</h2>
+                <p class="text-gray-600">点击左侧导航栏的"知识图谱"查看内容</p>
+            {% endif %}
         </div>
     </main>
 </div>
@@ -117,11 +123,15 @@
 
         // 加载内容的函数
         function loadContent(target) {
-            const contentArea = document.querySelector('main > div');
+            const contentArea = document.querySelector('#content-area');
 
             if (target === '知识图谱') {
-                // 使用AJAX加载知识图谱内容
-                fetch('/main/knowledge-graph')
+                // 使用AJAX加载知识图谱内容，并设置X-Requested-With头
+                fetch('/main/knowledge-graph', {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
                     .then(response => response.text())
                     .then(html => {
                         // 直接替换内容区域
@@ -146,7 +156,7 @@
                                 <h3 class="font-semibold text-lg mb-2">排序算法</h3>
                                 <p class="text-gray-600 text-sm mb-3">常见排序算法实现与演示</p>
                                 <div class="flex justify-between items-center">
-                                    <span class="text-xs text-gray-500">更新于 2023-05-15</span>
+                                    <span class="text-xs text-gray-500">更新于 2025-05-05</span>
                                     <button class="px-3 py-1 bg-primary/10 text-primary text-sm rounded hover:bg-primary/20 transition">查看详情</button>
                                 </div>
                             </div>
@@ -156,7 +166,7 @@
                                 <h3 class="font-semibold text-lg mb-2">图算法</h3>
                                 <p class="text-gray-600 text-sm mb-3">图的遍历、最短路径等算法实现</p>
                                 <div class="flex justify-between items-center">
-                                    <span class="text-xs text-gray-500">更新于 2023-06-20</span>
+                                    <span class="text-xs text-gray-500">更新于 2025-05-05</span>
                                     <button class="px-3 py-1 bg-primary/10 text-primary text-sm rounded hover:bg-primary/20 transition">查看详情</button>
                                 </div>
                             </div>

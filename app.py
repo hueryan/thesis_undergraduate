@@ -215,6 +215,66 @@ def main():
 
 
 # 从Neo4j获取随机节点的路由
+# @app.route('/main/knowledge-graph')
+# def knowledge_graph():
+#     # 确保用户已登录
+#     if not is_user_logged_in():
+#         flash('请先登录')
+#         return redirect(url_for('login'))
+#
+#     try:
+#         # 连接到Neo4j数据库
+#         with driver.session() as session:
+#             # Cypher查询：获取末端节点（没有出边的节点）及其完整路径
+#             query = """
+#             MATCH path=(root)-[*0..]->(endNode)
+#             WHERE NOT (endNode)-->()  // 只选择没有出边的节点
+#             WITH endNode, collect(path) as paths, rand() as random
+#             ORDER BY random
+#             LIMIT 9  // 随机选择9个末端节点
+#             UNWIND paths as path
+#             WITH endNode, nodes(path) as pathNodes, relationships(path) as rels
+#             RETURN
+#                 endNode,
+#                 [node in pathNodes | node.name] as pathNames,  // 节点名称列表
+#                 [rel in rels | type(rel)] as relTypes  // 关系类型列表
+#             """
+#
+#             # 执行查询
+#             results = session.run(query)
+#
+#             # 处理结果
+#             leaf_nodes = []
+#             for record in results:
+#                 node = record['endNode']
+#                 path_names = record['pathNames']
+#                 rel_types = record['relTypes']
+#
+#                 # 获取节点的基本信息
+#                 node_id = node.id
+#                 node_name = node.get('name', '未知名称')
+#                 node_type = list(node.labels)[0] if node.labels else '未知类型'
+#                 node_description = node.get('description', '无描述')
+#
+#                 # 构建路径信息，使用→连接节点名称
+#                 path_info = "→".join(path_names) if path_names else "根节点"
+#
+#                 # 添加到节点列表
+#                 leaf_nodes.append({
+#                     'id': node_id,
+#                     'name': node_name,
+#                     'type': node_type,
+#                     'description': node_description,
+#                     'path_info': path_info
+#                 })
+#
+#             # 渲染知识图谱页面，传递节点数据
+#             return render_template('node_show.html', leaf_nodes=leaf_nodes)
+#
+#     except Exception as e:
+#         flash(f'获取知识图谱数据失败: {str(e)}', 'error')
+#         return redirect(url_for('main'))
+
 @app.route('/main/knowledge-graph')
 def knowledge_graph():
     # 确保用户已登录
@@ -268,8 +328,13 @@ def knowledge_graph():
                     'path_info': path_info
                 })
 
-            # 渲染知识图谱页面，传递节点数据
-            return render_template('node_show.html', leaf_nodes=leaf_nodes)
+            # 判断是否是AJAX请求
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                # 只返回内容片段
+                return render_template('node_show.html', leaf_nodes=leaf_nodes)
+            else:
+                # 返回完整页面
+                return render_template('main.html', leaf_nodes=leaf_nodes)
 
     except Exception as e:
         flash(f'获取知识图谱数据失败: {str(e)}', 'error')
