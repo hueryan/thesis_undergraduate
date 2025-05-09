@@ -48,16 +48,32 @@
         </div>
 
         <!-- 用户信息区域 -->
-        <div class="flex items-center space-x-2">
-            {% if session.get('role') == -1 %}
-                <span class="px-2 py-1 rounded bg-admin/10 text-admin text-sm font-medium">管理员</span>
-            {% endif %}
-            <span class="text-gray-800 font-medium">{{ session.get('user', '未登录') }}</span>
+        <div class="relative group">
+            <div class="flex items-center space-x-2 cursor-pointer">
+                {% if session.get('role') == -1 %}
+                    <span class="px-2 py-1 rounded bg-admin/10 text-admin text-sm font-medium">管理员</span>
+                {% endif %}
+                <span class="text-gray-800 font-medium">{{ session.get('user', '未登录') }}</span>
+                <i class="fa fa-chevron-down text-xs text-gray-500 group-hover:rotate-180 transition-transform duration-200"></i>
+            </div>
+
+            <!-- 下拉菜单 -->
+            <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-right group-hover:translate-y-0 translate-y-2">
+                <a href="{{ url_for('change_password') }}"
+                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    <i class="fa fa-key mr-2"></i>重置密码
+                </a>
+                <a href="{{ url_for('logout') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    <i class="fa fa-sign-out mr-2"></i>退出登录
+                </a>
+            </div>
         </div>
     </div>
 </header>
 
-<div id="welcome-message" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-lg shadow-lg bg-green-500 text-white opacity-0 transition-opacity duration-500" style="display: none;"></div>
+<div id="welcome-message"
+     class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-lg shadow-lg bg-green-500 text-white opacity-0 transition-opacity duration-500"
+     style="display: none;"></div>
 
 <!-- 主内容区域 -->
 <div class="flex min-h-screen-without-header">
@@ -178,7 +194,8 @@
             }
         }
     });
-    document.addEventListener('DOMContentLoaded', function() {
+
+    document.addEventListener('DOMContentLoaded', function () {
         // 检查URL参数中是否有login_success标志
         const urlParams = new URLSearchParams(window.location.search);
         const loginSuccess = urlParams.get('login_success');
@@ -202,7 +219,7 @@
             }, 100);
 
             // 3秒后淡出并隐藏欢迎消息
-            setTimeout(function() {
+            setTimeout(function () {
                 welcomeMessage.style.opacity = '0';
                 setTimeout(() => {
                     welcomeMessage.style.display = 'none';
@@ -213,6 +230,7 @@
             }, 3000);
         }
     });
+
 </script>
 
 </body>

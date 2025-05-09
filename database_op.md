@@ -43,5 +43,5 @@ CREATE TABLE IF NOT EXISTS algorithm_templates (
 ```
 
 UPDATE invitation_codes 
-SET expiration_date = "2025-05-10 02:10:24" 
+SET used_count = 10 
 WHERE id = 2;

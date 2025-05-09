@@ -199,7 +199,7 @@ def logout():
     # 清除所有session变量
     session.clear()
     flash('已成功注销')
-    return redirect(url_for('index'))
+    return redirect(url_for('login'))
 
 
 # 主页面路由
@@ -214,66 +214,64 @@ def main():
     return render_template('main.html')
 
 
-# 从Neo4j获取随机节点的路由
-# @app.route('/main/knowledge-graph')
-# def knowledge_graph():
-#     # 确保用户已登录
-#     if not is_user_logged_in():
-#         flash('请先登录')
-#         return redirect(url_for('login'))
-#
-#     try:
-#         # 连接到Neo4j数据库
-#         with driver.session() as session:
-#             # Cypher查询：获取末端节点（没有出边的节点）及其完整路径
-#             query = """
-#             MATCH path=(root)-[*0..]->(endNode)
-#             WHERE NOT (endNode)-->()  // 只选择没有出边的节点
-#             WITH endNode, collect(path) as paths, rand() as random
-#             ORDER BY random
-#             LIMIT 9  // 随机选择9个末端节点
-#             UNWIND paths as path
-#             WITH endNode, nodes(path) as pathNodes, relationships(path) as rels
-#             RETURN
-#                 endNode,
-#                 [node in pathNodes | node.name] as pathNames,  // 节点名称列表
-#                 [rel in rels | type(rel)] as relTypes  // 关系类型列表
-#             """
-#
-#             # 执行查询
-#             results = session.run(query)
-#
-#             # 处理结果
-#             leaf_nodes = []
-#             for record in results:
-#                 node = record['endNode']
-#                 path_names = record['pathNames']
-#                 rel_types = record['relTypes']
-#
-#                 # 获取节点的基本信息
-#                 node_id = node.id
-#                 node_name = node.get('name', '未知名称')
-#                 node_type = list(node.labels)[0] if node.labels else '未知类型'
-#                 node_description = node.get('description', '无描述')
-#
-#                 # 构建路径信息，使用→连接节点名称
-#                 path_info = "→".join(path_names) if path_names else "根节点"
-#
-#                 # 添加到节点列表
-#                 leaf_nodes.append({
-#                     'id': node_id,
-#                     'name': node_name,
-#                     'type': node_type,
-#                     'description': node_description,
-#                     'path_info': path_info
-#                 })
-#
-#             # 渲染知识图谱页面，传递节点数据
-#             return render_template('node_show.html', leaf_nodes=leaf_nodes)
-#
-#     except Exception as e:
-#         flash(f'获取知识图谱数据失败: {str(e)}', 'error')
-#         return redirect(url_for('main'))
+# 重置密码路由 - 处理GET和POST请求
+@app.route('/change_password', methods=['GET', 'POST'])
+def change_password():
+    # 确保用户已登录
+    if not is_user_logged_in():
+        flash('请先登录')
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        current_password = request.form.get('current_password')
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+
+        errors = {}
+
+        # 验证当前密码
+        user_id = session.get('user_id')
+        with get_mysql_connection() as conn:
+            with conn.cursor() as cursor:
+                sql = f"SELECT password FROM {MYSQL_USER_TABLE} WHERE id = %s"
+                cursor.execute(sql, (user_id,))
+                result = cursor.fetchone()
+
+                if not result or result['password'] != hash_password(current_password):
+                    errors['current_password'] = '当前密码不正确'
+
+        # 验证新密码
+        if len(new_password) < 8:
+            errors['new_password'] = '新密码长度至少8位'
+        elif not (
+                (any(c.isalpha() for c in new_password) and any(c.isdigit() for c in new_password)) or
+                (any(c.isalpha() for c in new_password) and any(not c.isalnum() for c in new_password)) or
+                (any(c.isdigit() for c in new_password) and any(not c.isalnum() for c in new_password))
+        ):
+            errors['new_password'] = '新密码必须包含字母、数字、特殊字符中的至少两项'
+
+        # 验证确认密码
+        if new_password != confirm_password:
+            errors['confirm_password'] = '两次输入的密码不一致'
+
+        if errors:
+            for field, msg in errors.items():
+                flash(msg, field)
+            return redirect(url_for('change_password'))
+
+        # 更新密码
+        with get_mysql_connection() as conn:
+            with conn.cursor() as cursor:
+                sql = f"UPDATE {MYSQL_USER_TABLE} SET password = %s WHERE id = %s"
+                cursor.execute(sql, (hash_password(new_password), user_id))
+                conn.commit()
+
+        flash('密码更新成功，请使用新密码登录', 'success')
+        return redirect(url_for('logout'))
+
+    # 移除对 AJAX 请求的特殊处理，直接返回完整页面
+    return render_template('change_password.html')
+
 
 @app.route('/main/knowledge-graph')
 def knowledge_graph():
