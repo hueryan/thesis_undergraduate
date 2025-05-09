@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>注册 - 数据结构学习系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+
+    <!-- 配置Tailwind主题 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6366f1',
+                        secondary: '#8b5cf6',
+                        dark: '#1e293b',
+                        light: '#f8fafc'
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .card-shadow {
+                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+            }
+            .input-focus {
+                @apply focus:ring-2 focus:ring-primary/50 focus:border-primary transition duration-200;
+            }
+            .password-strength {
+                @apply h-1 w-full rounded-full bg-gray-200 mt-1;
+            }
+            .strength-weak {
+                @apply bg-red-500;
+            }
+            .strength-medium {
+                @apply bg-yellow-500;
+            }
+            .strength-strong {
+                @apply bg-green-500;
+            }
+            .message-container {
+                @apply mb-6;
+            }
+            .message-item {
+                @apply bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-2 flex items-center;
+            }
+            .message-icon {
+                @apply mr-2 text-red-500;
+            }
+        }
+    </style>
+</head>
+
+<body class="font-inter bg-gray-50 text-dark min-h-screen flex flex-col">
+    <!-- 导航栏 -->
+    <nav class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/" class="flex-shrink-0 flex items-center">
+                        <i class="fa fa-sitemap text-primary text-2xl mr-2"></i>
+                        <span class="font-bold text-xl">数据结构学习系统</span>
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="{{ url_for('index') }}"
+                        class="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-primary transition">首页</a>
+                    <a href="{{ url_for('login') }}"
+                        class="px-3 py-2 rounded-md text-sm font-medium text-primary hover:text-primary/80 transition">登录</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主要内容 -->
+    <main class="flex-grow flex items-center justify-center p-4 sm:p-6 lg:p-8">
+        <div class="w-full max-w-md">
+            <!-- 注册卡片 -->
+            <div class="bg-white rounded-2xl p-8 card-shadow">
+                <div class="text-center mb-8">
+                    <h2 class="text-3xl font-bold text-gray-900">创建新账户</h2>
+                    <p class="mt-2 text-gray-500">加入我们，开始构建您的知识图谱</p>
+                </div>
+
+                <!-- 消息提示容器 -->
+                <div class="message-container">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="message-item">
+                                    <i class="fa fa-exclamation-circle message-icon"></i>
+                                    <span>{{ message }}</span>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                </div>
+
+                <!-- 注册表单 -->
+                <form method="POST" action="{{ url_for('register') }}" class="space-y-6">
+                    <!-- 用户名 -->
+                    <div>
+                        <label for="username" class="block text-sm font-medium text-gray-700 mb-1">用户名</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fa fa-user text-gray-400"></i>
+                            </div>
+                            <input type="text" id="username" name="username" required
+                                class="pl-10 block w-full rounded-lg border-gray-300 shadow-sm input-focus py-3 px-4 border"
+                                placeholder="创建您的用户名">
+                        </div>
+                    </div>
+
+                    <!-- 邮箱 -->
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-700 mb-1">邮箱</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fa fa-envelope text-gray-400"></i>
+                            </div>
+                            <input type="email" id="email" name="email" required
+                                class="pl-10 block w-full rounded-lg border-gray-300 shadow-sm input-focus py-3 px-4 border"
+                                placeholder="您的邮箱地址">
+                        </div>
+                    </div>
+
+                    <!-- 密码 -->
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-700 mb-1">密码</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fa fa-lock text-gray-400"></i>
+                            </div>
+                            <input type="password" id="password" name="password" required
+                                class="pl-10 pr-10 block w-full rounded-lg border-gray-300 shadow-sm input-focus py-3 px-4 border"
+                                placeholder="创建您的密码" oninput="validatePassword(this, 'passwordHint')">
+                            <button type="button" id="togglePassword"
+                                class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+                                onclick="togglePasswordVisibility('password')">
+                                <i class="fa fa-eye-slash"></i>
+                            </button>
+                        </div>
+                        <!-- 密码强度指示器 -->
+                        <div class="password-strength-container">
+                            <div id="passwordStrength" class="password-strength"></div>
+                            <div id="strengthText" class="text-xs text-gray-500 mt-1">密码强度: 未输入</div>
+                        </div>
+                    </div>
+
+                    <!-- 邀请码 -->
+                    <div>
+                        <label for="invitation_code" class="block text-sm font-medium text-gray-700 mb-1">邀请码 (选填)</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fa fa-key text-gray-400"></i>
+                            </div>
+                            <input type="text" id="invitation_code" name="invitation_code"
+                                class="pl-10 block w-full rounded-lg border-gray-300 shadow-sm input-focus py-3 px-4 border"
+                                placeholder="输入邀请码（选填）">
+                        </div>
+                    </div>
+
+                    <!-- 同意条款 -->
+                    <div class="flex items-start">
+                        <div class="flex items-center h-5">
+                            <input id="terms" name="terms" type="checkbox" required
+                                class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
+                        </div>
+                        <div class="ml-3 text-sm">
+                            <label for="terms" class="text-gray-600">我同意<a href="#"
+                                    class="text-primary hover:text-primary/80 transition">服务条款</a>和<a href="#"
+                                    class="text-primary hover:text-primary/80 transition">隐私政策</a></label>
+                        </div>
+                    </div>
+
+                    <button type="submit"
+                        class="w-full bg-primary hover:bg-primary/90 text-white font-medium py-3 px-4 rounded-lg transition duration-200 transform hover:-translate-y-1 hover:shadow-lg">
+                        创建账户
+                    </button>
+                </form>
+
+                <!-- 分隔线 -->
+                <div class="my-6 relative">
+                    <div class="absolute inset-0 flex items-center">
+                        <div class="w-full border-t border-gray-300"></div>
+                    </div>
+                    <div class="relative flex justify-center text-sm">
+                        <span class="px-2 bg-white text-gray-500">或者</span>
+                    </div>
+                </div>
+
+                <!-- 已有账户提示 -->
+                <p class="text-center text-sm text-gray-500">
+                    已有账户? <a href="{{ url_for('login') }}"
+                        class="font-medium text-primary hover:text-primary/80 transition">立即登录</a>
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-white border-t border-gray-200 py-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="text-gray-500 text-sm">
+                    &copy; 2025 yqy. 保留所有权利.
+                </div>
+                <div class="mt-4 md:mt-0">
+                    <a href="#" class="text-gray-500 hover:text-primary mx-3 text-sm transition">隐私政策</a>
+                    <a href="#" class="text-gray-500 hover:text-primary mx-3 text-sm transition">服务条款</a>
+                    <a href="#" class="text-gray-500 hover:text-primary mx-3 text-sm transition">联系我们</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // 密码强度检测
+        function validatePassword(input, hintId) {
+            const value = input.value;
+            const strengthIndicator = document.getElementById('passwordStrength');
+            const strengthText = document.getElementById('strengthText');
+
+            // 计算密码强度
+            let strength = 0;
+            if (value.length >= 12) strength++;
+            if (/[A-Z]/.test(value) && /[a-z]/.test(value)) strength++;
+            if (/\d/.test(value) && /[^a-zA-Z0-9]/.test(value)) strength++;
+
+            // 更新密码强度指示器
+            updatePasswordStrength(strength);
+        }
+
+        // 更新密码强度指示器
+        function updatePasswordStrength(strength) {
+            const strengthIndicator = document.getElementById('passwordStrength');
+            const strengthText = document.getElementById('strengthText');
+
+            // 移除所有强度类
+            strengthIndicator.classList.remove('strength-weak', 'strength-medium', 'strength-strong');
+
+            if (strength === 0) {
+                strengthIndicator.classList.add('strength-weak');
+                strengthText.textContent = '密码强度: 弱';
+                strengthText.className = 'text-xs text-red-500 mt-1';
+            } else if (strength === 1) {
+                strengthIndicator.classList.add('strength-medium');
+                strengthText.textContent = '密码强度: 中';
+                strengthText.className = 'text-xs text-yellow-500 mt-1';
+            } else {
+                strengthIndicator.classList.add('strength-strong');
+                strengthText.textContent = '密码强度: 强';
+                strengthText.className = 'text-xs text-green-500 mt-1';
+            }
+        }
+
+        // 切换密码可见性
+        function togglePasswordVisibility(inputId) {
+            const input = document.getElementById(inputId);
+            const icon = input.nextElementSibling.querySelector('i');
+
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            }
+        }
+    </script>
+</body>
+
+</html>
