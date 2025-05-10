@@ -339,8 +339,6 @@ def knowledge_graph():
         flash(f'获取知识图谱数据失败: {str(e)}', 'error')
         return redirect(url_for('main'))
 
-
-# app.py
 @app.route('/main/algorithm-templates')
 def algorithm_templates():
     # 确保用户已登录
@@ -592,7 +590,5 @@ def admin_edit_algorithm_template(template_id):
 
     return render_template('admin/algorithm_template_edit.html', template=template)
 
-
-# 运行应用
 if __name__ == '__main__':
     app.run(debug=True)
