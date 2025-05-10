@@ -459,6 +459,35 @@ def algorithm_templates():
         return redirect(url_for('main'))
 
 
+@app.route('/main/algorithm-templates/<int:template_id>')
+def view_algorithm_template(template_id):
+    # 验证普通用户权限
+    if not is_user_logged_in():
+        flash('请先登录', 'error')
+        return redirect(url_for('login'))
+
+    # 获取模板数据
+    template = get_algorithm_template(template_id)
+    if not template:
+        flash('模板不存在', 'error')
+        return redirect(url_for('algorithm_templates'))
+
+    # 动态识别代码语言
+    code = template['code']
+    match = re.search(r'^```([^\s`]+)', code, re.MULTILINE)
+    if match:
+        lang = match.group(1).lower()
+        # 统一语言标识
+        if lang in ['c++', 'cpp']:
+            lang = 'cpp'
+        elif lang == 'csharp':
+            lang = 'csharp'
+        template['language'] = lang
+    else:
+        template['language'] = 'plaintext'
+
+    return render_template('algorithm_template_view.html', template=template)
+
 @app.route('/main/algorithm-templates/random')
 def random_algorithm_templates():
     # 确保用户已登录

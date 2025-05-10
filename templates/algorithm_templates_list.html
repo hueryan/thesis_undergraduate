@@ -3,8 +3,10 @@
         <h2 class="text-2xl font-bold text-gray-800">算法模板列表</h2>
         <div class="flex items-center space-x-2">
             <!-- 搜索框 -->
-            <input type="text" id="search-input" placeholder="搜索算法名称" class="p-2 border border-gray-300 rounded-md">
-            <button type="button" onclick="searchAlgorithms()" class="p-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition relative" title="搜索">
+            <input type="text" id="search-input" placeholder="搜索算法名称"
+                   class="p-2 border border-gray-300 rounded-md">
+            <button type="button" onclick="searchAlgorithms()"
+                    class="p-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition relative" title="搜索">
                 <i class="fa fa-search"></i>
             </button>
             <button type="button"
@@ -30,7 +32,8 @@
 
     <div class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {% for template in algorithm_templates %}
-            <div class="bg-white rounded-xl shadow-md p-6 transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1" id="template-{{ template.id }}">
+            <div class="bg-white rounded-xl shadow-md p-6 transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
+                 id="template-{{ template.id }}">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-xl font-bold text-gray-800">{{ template.name }}</h3>
                     <div class="flex items-center space-x-2">
@@ -101,6 +104,10 @@
         function goToPage() {
             const page = document.getElementById('page-input').value;
             window.location.href = "{{ url_for('algorithm_templates', sort=sort, page='') }}" + page;
+        }
+
+        function viewAlgorithm(templateId) {
+            window.location.href = `/main/algorithm-templates/${templateId}`;
         }
     </script>
 {% endblock %}

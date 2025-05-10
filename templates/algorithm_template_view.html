@@ -1,4 +1,4 @@
-{% extends "admin/admin_base.html" %}
+{% extends "user_base.html" %}
 
 {% block content %}
     <div class="max-w-4xl mx-auto">
@@ -16,6 +16,13 @@
              id="markdown-content">
             内容加载中...
         </div>
+
+        <!-- 返回按钮 -->
+        <div class="mt-8">
+            <button id="back-button" class="bg-gradient-to-r from-blue-500 to-purple-500 text-white py-2 px-4 rounded-md hover:from-blue-600 hover:to-purple-600 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-opacity-50">
+                返回
+            </button>
+        </div>
     </div>
 
     <!-- Markdown解析 -->
@@ -25,59 +32,48 @@
 
     <link rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
-{#    <link rel="stylesheet" #}
-{#          href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.0/styles/default.min.css">#}
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.5/purify.min.js"></script>
 
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+    <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <!-- 引入markdown-it库 -->
+    <script src="https://cdn.jsdelivr.net/npm/markdown-it@13.0.1/dist/markdown-it.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 初始化代码高亮
+            hljs.highlightAll();
 
+            // 仅针对包含code的pre元素添加复制按钮
+            document.querySelectorAll('pre code').forEach(codeBlock => {
+                const pre = codeBlock.parentElement;
+                const btn = document.createElement('button');
+                // 修改复制按钮样式为渐变色
+                btn.className = 'absolute right-3 top-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white px-2 py-1 rounded-md hover:from-blue-600 hover:to-purple-600 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-opacity-50';
+                btn.innerHTML = '<i class="fa fa-copy text-sm"></i>';
 
+                btn.onclick = () => {
+                    navigator.clipboard.writeText(codeBlock.innerText)
+                        .then(() => {
+                            btn.innerHTML = '<i class="fa fa-check text-green-500"></i>';
+                            setTimeout(() => {
+                                btn.innerHTML = '<i class="fa fa-copy text-sm"></i>';
+                            }, 2000);
+                        });
+                };
 
-    <style>
-        /* 继承管理后台核心样式 */
-        .admin-markdown-content {
-            font-family: 'Inter', system-ui, sans-serif;
-            color: #1f2937;
-            line-height: 1.6;
-        }
+                pre.style.position = 'relative';
+                pre.appendChild(btn);
+            });
 
-        .admin-markdown-content h1 {
-            font-size: 1.875rem;
-            font-weight: 700;
-            margin: 1.5rem 0 1rem;
-            color: #111827;
-        }
-
-        .admin-markdown-content h2 {
-            font-size: 1.5rem;
-            font-weight: 600;
-            margin: 1.25rem 0 0.75rem;
-            color: #111827;
-        }
-
-        .admin-markdown-content pre {
-            background: #0d1117 !important;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            overflow-x: auto;
-            margin: 1rem 0;
-            position: relative;
-        }
-
-        .admin-markdown-content code:not(pre code) {
-            background: #f3f4f6;
-            padding: 0.2em 0.4em;
-            border-radius: 0.25rem;
-            color: #dc2626;
-        }
-
-        .admin-markdown-content blockquote {
-            border-left: 4px solid #e5e7eb;
-            padding-left: 1rem;
-            color: #6b7280;
-            margin: 1rem 0;
-        }
-    </style>
+            // 渲染Markdown内容
+            const md = window.markdownit();
+            document.querySelectorAll('.markdown-content').forEach(element => {
+                const html = md.render(element.textContent);
+                element.innerHTML = html;
+            });
+        });
+    </script>
 
     <script>
         // 增强版初始化逻辑
@@ -115,7 +111,8 @@
                 // 添加复制按钮
                 container.querySelectorAll('pre').forEach(pre => {
                     const btn = document.createElement('button');
-                    btn.className = 'absolute right-3 top-2 text-gray-300 hover:text-white transition';
+                    // 修改复制按钮样式为渐变色
+                    btn.className = 'absolute right-3 top-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white px-2 py-1 rounded-md hover:from-blue-600 hover:to-purple-600 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-opacity-50';
                     btn.innerHTML = '<i class="fa fa-copy text-sm"></i>';
                     btn.onclick = () => {
                         navigator.clipboard.writeText(pre.querySelector('code').innerText);
@@ -142,5 +139,10 @@
         } else {
             document.addEventListener('DOMContentLoaded', initMarkdownRender);
         }
+
+        // 添加返回按钮点击事件
+        document.getElementById('back-button').addEventListener('click', function() {
+            window.history.back();
+        });
     </script>
 {% endblock %}
