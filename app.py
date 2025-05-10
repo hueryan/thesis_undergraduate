@@ -389,7 +389,7 @@ def algorithm_templates():
         # 判断是否是 AJAX 请求
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             # 只返回内容片段
-            return render_template('algorithm_templates.html',
+            return render_template('algorithm_templates_list.html',
                                    algorithm_templates=algorithm_templates,
                                    pagination=pagination)
         else:
