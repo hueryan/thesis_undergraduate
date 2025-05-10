@@ -3,9 +3,32 @@
 {% block content %}
     <h2 class="text-2xl font-bold text-gray-800 mb-4">管理算法模板</h2>
 
-    <a href="{{ url_for('admin_create_algorithm_template') }}" class="inline-block mb-6 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition">
-        <i class="fa fa-plus mr-2"></i>新建模板
-    </a>
+    <div class="flex justify-between items-center mb-6">
+        <a href="{{ url_for('admin_create_algorithm_template') }}"
+           class="inline-block px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition">
+            <i class="fa fa-plus mr-2"></i>新建模板
+        </a>
+        <div class="relative flex-grow max-w-md mr-4">
+            <input type="text" id="search-input" placeholder="搜索算法模板..."
+                   value="{{ search_query }}"
+                   class="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition duration-200">
+            <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+        </div>
+        <div class="flex items-center space-x-2">
+            <button type="button"
+                    onclick="window.location.href='{{ url_for('admin_algorithm_templates', sort='asc', page=1) }}'"
+                    class="p-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition relative"
+                    title="按ID正序排序">
+                <i class="fa fa-sort-asc"></i>
+            </button>
+            <button type="button"
+                    onclick="window.location.href='{{ url_for('admin_algorithm_templates', sort='desc', page=1) }}'"
+                    class="p-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition relative"
+                    title="按ID逆序排序">
+                <i class="fa fa-sort-desc"></i>
+            </button>
+        </div>
+    </div>
 
     <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
@@ -33,4 +56,110 @@
             </tbody>
         </table>
     </div>
+
+    <!-- 分页导航 -->
+    <div class="mt-6 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+            {% if pagination.has_prev %}
+                <a href="{{ url_for('admin_algorithm_templates', sort=sort, page=pagination.prev_num) }}"
+                   class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition">上一页</a>
+            {% else %}
+                <span class="px-4 py-2 bg-gray-100 text-gray-400 rounded-lg cursor-not-allowed">上一页</span>
+            {% endif %}
+
+            <span class="text-sm text-gray-600">
+            第
+            <input type="number" id="page-input" value="{{ pagination.page }}" min="1" max="{{ pagination.pages }}"
+                   class="w-12 px-2 py-1 rounded border border-gray-300 text-center focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary">
+            页，共 {{ pagination.pages }} 页
+        </span>
+
+            {% if pagination.has_next %}
+                <a href="{{ url_for('admin_algorithm_templates', sort=sort, page=pagination.next_num) }}"
+                   class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition">下一页</a>
+            {% else %}
+                <span class="px-4 py-2 bg-gray-100 text-gray-400 rounded-lg cursor-not-allowed">下一页</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 错误提示框 -->
+    <div id="error-message" class="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+        <div class="bg-red-500 text-white px-6 py-3 rounded-lg shadow-xl transform scale-95 opacity-0 transition-all duration-300">
+            页面不存在！
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const pageInput = document.getElementById('page-input');
+            const errorMessage = document.getElementById('error-message');
+            const searchInput = document.getElementById('search-input');
+
+            // 监听页码输入框回车事件
+            pageInput.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    const page = parseInt(pageInput.value);
+                    const totalPages = parseInt('{{ pagination.pages }}');
+
+                    // 验证页码有效性
+                    if (isNaN(page) || page < 1 || page > totalPages) {
+                        showErrorMessage();
+                        pageInput.value = '{{ pagination.page }}'; // 恢复原值
+                        return;
+                    }
+
+                    // 跳转到指定页面（保留搜索条件）
+                    navigateToPage(page);
+                }
+            });
+
+            // 监听搜索输入框回车事件
+            searchInput.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    searchAndSort('{{ sort }}'); // 使用当前排序方式
+                }
+            });
+
+            // 搜索并排序函数
+            function searchAndSort(sortOrder) {
+                const searchTerm = searchInput.value.trim();
+                const currentUrl = new URL(window.location.href);
+
+                // 更新搜索参数
+                if (searchTerm) {
+                    currentUrl.searchParams.set('search', searchTerm);
+                } else {
+                    currentUrl.searchParams.delete('search');
+                }
+
+                // 更新排序参数
+                currentUrl.searchParams.set('sort', sortOrder);
+
+                // 重置页码到第1页
+                currentUrl.searchParams.set('page', 1);
+
+                window.location.href = currentUrl.toString();
+            }
+
+            // 导航到指定页面
+            function navigateToPage(page) {
+                const currentUrl = new URL(window.location.href);
+                currentUrl.searchParams.set('page', page);
+                window.location.href = currentUrl.toString();
+            }
+
+            // 显示错误消息
+            function showErrorMessage() {
+                errorMessage.style.transform = 'translateY(0)';
+                errorMessage.style.opacity = '1';
+
+                // 3秒后隐藏
+                setTimeout(() => {
+                    errorMessage.style.transform = 'translateY(-20px)';
+                    errorMessage.style.opacity = '0';
+                }, 3000);
+            }
+        });
+    </script>
 {% endblock %}

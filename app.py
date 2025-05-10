@@ -436,8 +436,69 @@ def admin_algorithm_templates():
         flash('权限不足', 'error')
         return redirect(url_for('main'))
 
-    templates = get_all_algorithm_templates()
-    return render_template('admin/algorithm_templates_list.html', templates=templates)
+    # 获取搜索参数
+    search_query = request.args.get('search', '').strip()
+
+    # 获取排序参数，默认为按ID降序
+    sort = request.args.get('sort', 'desc')
+
+    # 获取页码，默认为第1页
+    page = int(request.args.get('page', 1))
+    per_page = 8
+    offset = (page - 1) * per_page
+
+    # 根据排序参数构建SQL查询
+    if sort == 'asc':
+        order_by = 'ORDER BY id ASC'
+    else:
+        order_by = 'ORDER BY id DESC'
+
+    with get_mysql_connection() as conn:
+        with conn.cursor() as cursor:
+            # 构建基础SQL查询
+            base_sql = f"FROM {MYSQL_ALGORITHM_TEMPLATES_TABLE}"
+
+            # 添加搜索条件
+            if search_query:
+                base_sql += " WHERE name LIKE %s"
+                search_param = f"%{search_query}%"
+                params = (search_param,)
+            else:
+                params = ()
+
+            # 查询总记录数
+            sql_count = f"SELECT COUNT(*) as total {base_sql}"
+            cursor.execute(sql_count, params)
+            total = cursor.fetchone()['total']
+
+            # 查询当前页的数据
+            sql = f"SELECT * {base_sql} {order_by} LIMIT {offset}, {per_page}"
+            cursor.execute(sql, params)
+            templates = cursor.fetchall()
+
+    # 计算分页信息
+    total_pages = (total + per_page - 1) // per_page
+    has_prev = page > 1
+    has_next = page < total_pages
+    prev_num = page - 1 if has_prev else None
+    next_num = page + 1 if has_next else None
+
+    pagination = {
+        'page': page,
+        'per_page': per_page,
+        'total': total,
+        'pages': total_pages,
+        'has_prev': has_prev,
+        'has_next': has_next,
+        'prev_num': prev_num,
+        'next_num': next_num
+    }
+
+    return render_template('admin/algorithm_templates_list.html',
+                           templates=templates,
+                           pagination=pagination,
+                           sort=sort,
+                           search_query=search_query)
 
 
 @app.route('/admin/algorithm-templates/new', methods=['GET', 'POST'])
