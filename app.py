@@ -51,7 +51,7 @@ def index():
     return render_template('index.html')
 
 
-# 登录路由 - 处理GET和POST请求
+# 登录路由 - 处理 GET 和 POST 请求
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -62,7 +62,7 @@ def login():
         hashed_password = hash_password(password)
 
         try:
-            # 使用get_mysql_connection函数获取连接，确保使用字典游标
+            # 使用 get_mysql_connection 函数获取连接，确保使用字典游标
             connection = get_mysql_connection()
             with connection.cursor() as cursor:
                 # 查询用户信息
@@ -74,7 +74,7 @@ def login():
                     # 用户存在，检查密码和状态
                     # 通过字段名访问密码，而不是索引位置
                     if user['password'] == hashed_password:  # 密码匹配
-                        if user['status'] == 200:  # 状态为200
+                        if user['status'] == 200:  # 状态为 200
                             session['user_id'] = user['id']
                             session['user'] = username
                             role = user['role']
@@ -84,7 +84,7 @@ def login():
                             elif role == 0:
                                 flash('欢迎用户登录系统', 'success')
                             return redirect(url_for('main') + '?login_success=true')
-                        else:  # 状态非200
+                        else:  # 状态非 200
                             flash('该用户已被禁用，请联系管理员', 'error')
                     else:  # 密码不匹配
                         flash('密码错误', 'error')
@@ -109,6 +109,7 @@ def validate_invitation_code(code):
             cursor.execute(sql, (code,))
             return cursor.fetchone()
 
+
 def increment_invitation_usage(code):
     with get_mysql_connection() as conn:
         with conn.cursor() as cursor:
@@ -116,7 +117,8 @@ def increment_invitation_usage(code):
             cursor.execute(sql, (code,))
             conn.commit()
 
-# 注册路由 - 处理GET和POST请求
+
+# 注册路由 - 处理 GET 和 POST 请求
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -128,17 +130,17 @@ def register():
         # 表单验证
         errors = {}
 
-        # 用户名验证 (8-16位，必须包含字母和数字)
+        # 用户名验证 (8-16 位，必须包含字母和数字)
         if not re.match(r'^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,16}$', username):
-            errors['username'] = '用户名必须包含字母和数字，长度为8-16位'
+            errors['username'] = '用户名必须包含字母和数字，长度为 8-16 位'
 
         # 邮箱验证
         if not re.match(r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$', email):
             errors['email'] = '请输入有效的邮箱地址'
 
-        # 密码验证 (至少8位，至少包含两项：字母、数字、特殊字符)
+        # 密码验证 (至少 8 位，至少包含两项：字母、数字、特殊字符)
         if len(password) < 8:
-            errors['password'] = '密码长度至少8位'
+            errors['password'] = '密码长度至少 8 位'
         elif not (
                 (any(c.isalpha() for c in password) and any(c.isdigit() for c in password)) or
                 (any(c.isalpha() for c in password) and any(not c.isalnum() for c in password)) or
@@ -196,7 +198,7 @@ def register():
 
 @app.route('/logout')
 def logout():
-    # 清除所有session变量
+    # 清除所有 session 变量
     session.clear()
     flash('已成功注销')
     return redirect(url_for('login'))
@@ -209,12 +211,12 @@ def main():
     if not is_user_logged_in():
         flash('请先登录')
         return redirect(url_for('login'))
-    
+
     # 渲染主页面模板
     return render_template('main.html')
 
 
-# 重置密码路由 - 处理GET和POST请求
+# 重置密码路由 - 处理 GET 和 POST 请求
 @app.route('/change_password', methods=['GET', 'POST'])
 def change_password():
     # 确保用户已登录
@@ -242,7 +244,7 @@ def change_password():
 
         # 验证新密码
         if len(new_password) < 8:
-            errors['new_password'] = '新密码长度至少8位'
+            errors['new_password'] = '新密码长度至少 8 位'
         elif not (
                 (any(c.isalpha() for c in new_password) and any(c.isdigit() for c in new_password)) or
                 (any(c.isalpha() for c in new_password) and any(not c.isalnum() for c in new_password)) or
@@ -281,15 +283,15 @@ def knowledge_graph():
         return redirect(url_for('login'))
 
     try:
-        # 连接到Neo4j数据库
+        # 连接到 Neo4j 数据库
         with driver.session() as session:
-            # Cypher查询：获取末端节点（没有出边的节点）及其完整路径
+            # Cypher 查询：获取末端节点（没有出边的节点）及其完整路径
             query = """
             MATCH path=(root)-[*0..]->(endNode)
             WHERE NOT (endNode)-->()  // 只选择没有出边的节点
             WITH endNode, collect(path) as paths, rand() as random
             ORDER BY random
-            LIMIT 9  // 随机选择9个末端节点
+            LIMIT 9  // 随机选择 9 个末端节点
             UNWIND paths as path
             WITH endNode, nodes(path) as pathNodes, relationships(path) as rels
             RETURN 
@@ -326,7 +328,7 @@ def knowledge_graph():
                     'path_info': path_info
                 })
 
-            # 判断是否是AJAX请求
+            # 判断是否是 AJAX 请求
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 # 只返回内容片段
                 return render_template('node_show.html', leaf_nodes=leaf_nodes)
@@ -357,7 +359,7 @@ def algorithm_templates():
                 'category': '排序算法',
                 'language': 'Python',
                 'updated_at': '2025-05-05',
-                'description': '简单直观的排序算法，时间复杂度O(n²)'
+                'description': '简单直观的排序算法，时间复杂度 O(n²)'
             },
             {
                 'id': 2,
@@ -365,7 +367,7 @@ def algorithm_templates():
                 'category': '排序算法',
                 'language': 'Python',
                 'updated_at': '2025-05-05',
-                'description': '高效的分治排序算法，平均时间复杂度O(nlogn)'
+                'description': '高效的分治排序算法，平均时间复杂度 O(nlogn)'
             },
             {
                 'id': 3,
@@ -387,7 +389,7 @@ def algorithm_templates():
             'has_next': False
         }
 
-        # 判断是否是AJAX请求
+        # 判断是否是 AJAX 请求
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             # 只返回内容片段
             return render_template('algorithm_templates.html',
@@ -403,6 +405,7 @@ def algorithm_templates():
         flash(f'获取算法模板数据失败: {str(e)}', 'error')
         return redirect(url_for('main'))
 
+
 def create_algorithm_template(name, code, created_by):
     """创建新的算法模板"""
     with get_mysql_connection() as conn:
@@ -412,6 +415,7 @@ def create_algorithm_template(name, code, created_by):
             conn.commit()
             return cursor.lastrowid
 
+
 def get_algorithm_template(template_id):
     """获取单个算法模板"""
     with get_mysql_connection() as conn:
@@ -419,6 +423,7 @@ def get_algorithm_template(template_id):
             sql = f"SELECT * FROM {MYSQL_ALGORITHM_TEMPLATES_TABLE} WHERE id = %s"
             cursor.execute(sql, (template_id,))
             return cursor.fetchone()
+
 
 def get_all_algorithm_templates():
     """获取所有算法模板"""
@@ -439,15 +444,15 @@ def admin_algorithm_templates():
     # 获取搜索参数
     search_query = request.args.get('search', '').strip()
 
-    # 获取排序参数，默认为按ID降序
+    # 获取排序参数，默认为按 ID 降序
     sort = request.args.get('sort', 'desc')
 
-    # 获取页码，默认为第1页
+    # 获取页码，默认为第 1 页
     page = int(request.args.get('page', 1))
     per_page = 8
     offset = (page - 1) * per_page
 
-    # 根据排序参数构建SQL查询
+    # 根据排序参数构建 SQL 查询
     if sort == 'asc':
         order_by = 'ORDER BY id ASC'
     else:
@@ -455,7 +460,7 @@ def admin_algorithm_templates():
 
     with get_mysql_connection() as conn:
         with conn.cursor() as cursor:
-            # 构建基础SQL查询
+            # 构建基础 SQL 查询
             base_sql = f"FROM {MYSQL_ALGORITHM_TEMPLATES_TABLE}"
 
             # 添加搜索条件
@@ -523,6 +528,7 @@ def admin_create_algorithm_template():
 
     return render_template('admin/algorithm_template_form.html')
 
+
 @app.route('/admin')
 def admin_index():
     # 确保用户已登录且为管理员
@@ -530,6 +536,7 @@ def admin_index():
         flash('权限不足', 'error')
         return redirect(url_for('main'))
     return render_template('admin/admin_index.html')
+
 
 @app.route('/admin/algorithm-templates/<int:template_id>', methods=['GET'])
 def admin_view_algorithm_template(template_id):
@@ -542,9 +549,43 @@ def admin_view_algorithm_template(template_id):
     if not template:
         flash('模板不存在', 'error')
         return redirect(url_for('admin_algorithm_templates'))
-    # template.code已经包含了从数据库中获取的内容
+    # template.code 已经包含了从数据库中获取的内容
 
     return render_template('admin/algorithm_template_view.html', template=template)
+
+
+@app.route('/admin/algorithm-templates/<int:template_id>/edit', methods=['GET', 'POST'])
+def admin_edit_algorithm_template(template_id):
+    """管理员修改算法模板"""
+    if not is_user_logged_in() or session.get('role') != -1:
+        flash('权限不足', 'error')
+        return redirect(url_for('main'))
+
+    template = get_algorithm_template(template_id)
+    if not template:
+        flash('模板不存在', 'error')
+        return redirect(url_for('admin_algorithm_templates'))
+
+    if request.method == 'POST':
+        name = request.form.get('name')
+        code = request.form.get('code')
+        created_by = session.get('user')
+
+        if not name or not code:
+            flash('名称和代码不能为空', 'error')
+            return redirect(request.url)
+
+        with get_mysql_connection() as conn:
+            with conn.cursor() as cursor:
+                sql = f"UPDATE {MYSQL_ALGORITHM_TEMPLATES_TABLE} SET name = %s, code = %s, created_by = %s, created_at = %s WHERE id = %s"
+                cursor.execute(sql, (name, code, created_by, datetime.now(), template_id))
+                conn.commit()
+
+        flash('算法模板修改成功', 'success')
+        return redirect(url_for('admin_algorithm_templates'))
+
+    return render_template('admin/algorithm_template_form.html', template=template)
+
 
 # 运行应用
 if __name__ == '__main__':

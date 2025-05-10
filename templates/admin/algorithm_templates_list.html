@@ -18,13 +18,13 @@
             <button type="button"
                     onclick="window.location.href='{{ url_for('admin_algorithm_templates', sort='asc', page=1) }}'"
                     class="p-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition relative"
-                    title="按ID正序排序">
+                    title="按 ID 正序排序">
                 <i class="fa fa-sort-asc"></i>
             </button>
             <button type="button"
                     onclick="window.location.href='{{ url_for('admin_algorithm_templates', sort='desc', page=1) }}'"
                     class="p-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition relative"
-                    title="按ID逆序排序">
+                    title="按 ID 逆序排序">
                 <i class="fa fa-sort-desc"></i>
             </button>
         </div>
@@ -50,6 +50,7 @@
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ template.created_at }}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <a href="{{ url_for('admin_view_algorithm_template', template_id=template.id) }}" class="text-primary hover:text-primary/80">查看</a>
+                        <a href="{{ url_for('admin_edit_algorithm_template', template_id=template.id) }}" class="text-primary hover:text-primary/80 ml-2">修改</a>
                     </td>
                 </tr>
                 {% endfor %}
@@ -137,7 +138,7 @@
                 // 更新排序参数
                 currentUrl.searchParams.set('sort', sortOrder);
 
-                // 重置页码到第1页
+                // 重置页码到第 1 页
                 currentUrl.searchParams.set('page', 1);
 
                 window.location.href = currentUrl.toString();
@@ -161,7 +162,7 @@
                 errorContent.classList.remove('scale-95');
                 errorContent.classList.add('scale-100');
 
-                // 3秒后隐藏
+                // 3 秒后隐藏
                 setTimeout(() => {
                     errorMessage.classList.remove('opacity-100');
                     errorMessage.classList.add('opacity-0');
