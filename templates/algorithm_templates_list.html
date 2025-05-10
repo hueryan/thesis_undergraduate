@@ -19,10 +19,10 @@
                     <p><i class="fa fa-calendar mr-2"></i>创建于：{{ template.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
                 </div>
 
-                <!-- 代码预览区域 -->
-                <div class="bg-gray-50 rounded-lg p-3 mt-3 mb-4 text-xs max-h-32 overflow-auto">
-                    <pre class="text-gray-700"><code>{{ template.code|safe }}</code></pre>
-                </div>
+{#                <!-- 代码预览区域 -->#}
+{#                <div class="bg-gray-50 rounded-lg p-3 mt-3 mb-4 text-xs max-h-32 overflow-auto">#}
+{#                    <pre class="text-gray-700"><code>{{ template.code|safe }}</code></pre>#}
+{#                </div>#}
 
                 <div class="flex justify-end">
                     <button class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors" onclick="viewAlgorithm('{{ template.id }}')">
