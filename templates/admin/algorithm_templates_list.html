@@ -84,8 +84,9 @@
     </div>
 
     <!-- 错误提示框 -->
-    <div id="error-message" class="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
-        <div class="bg-red-500 text-white px-6 py-3 rounded-lg shadow-xl transform scale-95 opacity-0 transition-all duration-300">
+    <div id="error-message"
+         class="fixed inset-0 flex items-center justify-center z-50 pointer-events-none opacity-0 transition-opacity duration-300">
+        <div class="bg-red-500 text-white px-6 py-3 rounded-lg shadow-xl transform transition-transform duration-300 scale-95">
             页面不存在！
         </div>
     </div>
@@ -109,7 +110,7 @@
                         return;
                     }
 
-                    // 跳转到指定页面（保留搜索条件）
+                    // 跳转到指定页面
                     navigateToPage(page);
                 }
             });
@@ -151,13 +152,21 @@
 
             // 显示错误消息
             function showErrorMessage() {
-                errorMessage.style.transform = 'translateY(0)';
-                errorMessage.style.opacity = '1';
+                // 显示错误提示框
+                errorMessage.classList.remove('opacity-0');
+                errorMessage.classList.add('opacity-100');
+
+                // 获取提示框内容元素
+                const errorContent = errorMessage.querySelector('div');
+                errorContent.classList.remove('scale-95');
+                errorContent.classList.add('scale-100');
 
                 // 3秒后隐藏
                 setTimeout(() => {
-                    errorMessage.style.transform = 'translateY(-20px)';
-                    errorMessage.style.opacity = '0';
+                    errorMessage.classList.remove('opacity-100');
+                    errorMessage.classList.add('opacity-0');
+                    errorContent.classList.remove('scale-100');
+                    errorContent.classList.add('scale-95');
                 }, 3000);
             }
         });
