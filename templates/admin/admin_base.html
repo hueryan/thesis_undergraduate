@@ -80,22 +80,30 @@
             </div>
 
             <!-- 用户信息区域 -->
-            <div class="relative group">
-                <div class="flex items-center space-x-2 cursor-pointer">
-                    <span class="px-2 py-1 rounded bg-admin/10 text-admin text-sm font-medium">管理员</span>
-                    <span class="text-gray-800 font-medium">{{ session.get('user', '未登录') }}</span>
-                    <i class="fa fa-chevron-down text-xs text-gray-500 group-hover:rotate-180 transition-transform duration-200"></i>
-                </div>
+            <div class="flex items-center space-x-4">
+                <!-- 主页按钮 -->
+                <a href="{{ url_for('main') }}" class="px-3 py-1.5 rounded-md text-gray-600 hover:bg-gray-100 hover:text-primary transition">
+                    <i class="fa fa-home mr-1"></i>主页
+                </a>
 
-                <!-- 下拉菜单 -->
-                <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-right group-hover:translate-y-0 translate-y-2">
-                    <a href="{{ url_for('change_password') }}"
-                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                        <i class="fa fa-key mr-2"></i>重置密码
-                    </a>
-                    <a href="{{ url_for('logout') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                        <i class="fa fa-sign-out mr-2"></i>退出登录
-                    </a>
+                <div class="relative group">
+                    <div class="flex items-center space-x-2 cursor-pointer">
+                        <!-- 删除管理员标签 -->
+                        <!-- <span class="px-2 py-1 rounded bg-admin/10 text-admin text-sm font-medium">管理员</span> -->
+                        <span class="text-gray-800 font-medium">{{ session.get('user', '未登录') }}</span>
+                        <i class="fa fa-chevron-down text-xs text-gray-500 group-hover:rotate-180 transition-transform duration-200"></i>
+                    </div>
+
+                    <!-- 下拉菜单 -->
+                    <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-right group-hover:translate-y-0 translate-y-2">
+                        <a href="{{ url_for('change_password') }}"
+                           class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <i class="fa fa-key mr-2"></i>重置密码
+                        </a>
+                        <a href="{{ url_for('logout') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <i class="fa fa-sign-out mr-2"></i>退出登录
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>

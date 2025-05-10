@@ -1,0 +1,9 @@
+<!-- templates/admin/admin_index.html -->
+{% extends "admin/admin_base.html" %}
+
+{% block content %}
+    <h2 class="text-2xl font-bold text-gray-800 mb-4">管理员主页</h2>
+    <a href="{{ url_for('admin_algorithm_templates') }}" class="inline-block mb-6 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition">
+        <i class="fa fa-code mr-2"></i>算法模板管理
+    </a>
+{% endblock %}

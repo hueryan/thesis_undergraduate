@@ -462,6 +462,13 @@ def admin_create_algorithm_template():
 
     return render_template('admin/algorithm_template_form.html')
 
+@app.route('/admin')
+def admin_index():
+    # 确保用户已登录且为管理员
+    if not is_user_logged_in() or session.get('role') != -1:
+        flash('权限不足', 'error')
+        return redirect(url_for('main'))
+    return render_template('admin/admin_index.html')
 
 @app.route('/admin/algorithm-templates/<int:template_id>', methods=['GET'])
 def admin_view_algorithm_template(template_id):

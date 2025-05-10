@@ -14,7 +14,7 @@
                 extend: {
                     colors: {
                         primary: '#6366F1',
-                        admin: '#EC4899',
+                        admin: '#10b981',
                     },
                 },
             }
@@ -39,221 +39,227 @@
 </head>
 
 <body class="font-inter bg-gray-50 text-gray-800 min-h-screen flex flex-col">
-<!-- 顶部导航栏 -->
-<header class="bg-white nav-shadow sticky top-0 z-50">
-    <div class="container mx-auto px-4 py-3 flex justify-between items-center">
-        <div class="flex items-center space-x-2">
-            <i class="fa fa-sitemap text-primary text-2xl"></i>
-            <h1 class="text-xl font-bold text-gray-800">知识图谱平台</h1>
-        </div>
-
-        <!-- 用户信息区域 -->
-        <div class="relative group">
-            <div class="flex items-center space-x-2 cursor-pointer">
-                {% if session.get('role') == -1 %}
-                    <span class="px-2 py-1 rounded bg-admin/10 text-admin text-sm font-medium">管理员</span>
-                {% endif %}
-                <span class="text-gray-800 font-medium">{{ session.get('user', '未登录') }}</span>
-                <i class="fa fa-chevron-down text-xs text-gray-500 group-hover:rotate-180 transition-transform duration-200"></i>
+    <!-- 顶部导航栏 -->
+    <header class="bg-white nav-shadow sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fa fa-sitemap text-primary text-2xl"></i>
+                <h1 class="text-xl font-bold text-gray-800">知识图谱平台</h1>
             </div>
 
-            <!-- 下拉菜单 -->
-            <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-right group-hover:translate-y-0 translate-y-2">
-                <a href="{{ url_for('change_password') }}"
-                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                    <i class="fa fa-key mr-2"></i>重置密码
-                </a>
-                <a href="{{ url_for('logout') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                    <i class="fa fa-sign-out mr-2"></i>退出登录
-                </a>
+            <!-- 用户信息区域 -->
+            <div class="relative group">
+                <div class="flex items-center space-x-2 cursor-pointer">
+                    {% if session.get('role') == -1 %}
+                        <span class="px-2 py-1 rounded bg-admin/10 text-admin text-sm font-medium">管理员</span>
+                    {% endif %}
+                    <span class="text-gray-800 font-medium">{{ session.get('user', '未登录') }}</span>
+                    <i class="fa fa-chevron-down text-xs text-gray-500 group-hover:rotate-180 transition-transform duration-200"></i>
+                </div>
+
+                <!-- 下拉菜单 -->
+                <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-right group-hover:translate-y-0 translate-y-2">
+                    <a href="{{ url_for('change_password') }}"
+                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                        <i class="fa fa-key mr-2"></i>重置密码
+                    </a>
+                    <a href="{{ url_for('logout') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                        <i class="fa fa-sign-out mr-2"></i>退出登录
+                    </a>
+                    <!-- 添加算法模板管理菜单项 -->
+                    {% if session.get('role') == -1 %}
+                        <a href="{{ url_for('admin_index') }}"
+                           class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <i class="fa fa-cog mr-2"></i>管理员菜单
+                        </a>
+                    {% endif %}
+                </div>
             </div>
         </div>
-    </div>
-</header>
+    </header>
 
-<div id="welcome-message"
-     class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-lg shadow-lg bg-green-500 text-white opacity-0 transition-opacity duration-500"
-     style="display: none;"></div>
+    <div id="welcome-message"
+         class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-lg shadow-lg bg-green-500 text-white opacity-0 transition-opacity duration-500"
+         style="display: none;"></div>
 
-<!-- 主内容区域 -->
-<div class="flex min-h-screen-without-header">
-    <!-- 左侧导航栏 -->
-    <aside class="w-64 bg-white shadow-md p-6 h-screen sticky top-0 overflow-y-auto">
-        <h2 class="text-lg font-bold text-gray-800 mb-4">导航菜单</h2>
-        <ul class="space-y-2">
-            <li>
-                <a href="{{ url_for('knowledge_graph') }}"
-                   class="flex items-center p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
-                    <i class="fa fa-sitemap mr-2"></i>
-                    <span>知识图谱</span>
-                </a>
-            </li>
-            <li>
-                <a href="{{ url_for('algorithm_templates') }}"
-                   class="flex items-center p-2 rounded-lg bg-primary/10 text-primary">
-                    <i class="fa fa-code mr-2"></i>
-                    <span>算法模板</span>
-                </a>
-            </li>
-            <!-- 仅管理员可见的菜单项 -->
-            <!-- main.html 中的管理员菜单项 -->
-            {% if session.get('role') == -1 %}
+    <!-- 主内容区域 -->
+    <div class="flex min-h-screen-without-header">
+        <!-- 左侧导航栏 -->
+        <aside class="w-64 bg-white shadow-md p-6 h-screen sticky top-0 overflow-y-auto">
+            <h2 class="text-lg font-bold text-gray-800 mb-4">导航菜单</h2>
+            <ul class="space-y-2">
                 <li>
-                    <a href="{{ url_for('admin_algorithm_templates') }}"
+                    <a href="{{ url_for('knowledge_graph') }}"
                        class="flex items-center p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
-                        <i class="fa fa-cog mr-2"></i>
-                        <span>算法模板管理</span>
+                        <i class="fa fa-sitemap mr-2"></i>
+                        <span>知识图谱</span>
                     </a>
                 </li>
-            {% endif %}
-        </ul>
-    </aside>
-    <!-- 主内容 -->
+                <li>
+                    <a href="{{ url_for('algorithm_templates') }}"
+                       class="flex items-center p-2 rounded-lg bg-primary/10 text-primary">
+                        <i class="fa fa-code mr-2"></i>
+                        <span>算法模板</span>
+                    </a>
+                </li>
+                <!-- 移除管理员算法模板管理菜单项 -->
+                <!-- {% if session.get('role') == -1 %}
+                    <li>
+                        <a href="{{ url_for('admin_algorithm_templates') }}"
+                           class="flex items-center p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
+                            <i class="fa fa-cog mr-2"></i>
+                            <span>算法模板管理</span>
+                        </a>
+                    </li>
+                {% endif %} -->
+            </ul>
+        </aside>
+        <!-- 主内容 -->
 
-    <main class="flex-1 p-6 overflow-y-auto">
-        <div class="bg-white rounded-xl shadow-md p-6 h-full" id="content-area">
-            {% if leaf_nodes %}
-                <!-- 直接渲染知识图谱内容 -->
-                {% include 'node_show.html' %}
-            {% else %}
-                <!-- 默认内容 -->
-                <h2 class="text-2xl font-bold text-gray-800 mb-4">知识图谱节点展示</h2>
-                <p class="text-gray-600">点击左侧导航栏的"知识图谱"查看内容</p>
-            {% endif %}
-        </div>
-    </main>
-</div>
+        <main class="flex-1 p-6 overflow-y-auto">
+            <div class="bg-white rounded-xl shadow-md p-6 h-full" id="content-area">
+                {% if leaf_nodes %}
+                    <!-- 直接渲染知识图谱内容 -->
+                    {% include 'node_show.html' %}
+                {% else %}
+                    <!-- 默认内容 -->
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">知识图谱节点展示</h2>
+                    <p class="text-gray-600">点击左侧导航栏的"知识图谱"查看内容</p>
+                {% endif %}
+            </div>
+        </main>
+    </div>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        // 处理左侧导航栏点击
-        const navLinks = document.querySelectorAll('aside ul li a');
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // 处理左侧导航栏点击
+            const navLinks = document.querySelectorAll('aside ul li a');
 
-        navLinks.forEach(link => {
-            link.addEventListener('click', function (e) {
-                // 允许管理员链接正常跳转
-                if (this.getAttribute('href').startsWith('/admin/')) {
-                    return;
-                }
-                e.preventDefault();
+            navLinks.forEach(link => {
+                link.addEventListener('click', function (e) {
+                    // 允许管理员链接正常跳转
+                    if (this.getAttribute('href').startsWith('/admin/')) {
+                        return;
+                    }
+                    e.preventDefault();
 
-                // 更新URL
-                history.pushState(null, null, this.getAttribute('href'));
+                    // 更新URL
+                    history.pushState(null, null, this.getAttribute('href'));
 
-                // 移除所有选中状态
-                navLinks.forEach(item => {
-                    item.classList.remove('bg-primary/10', 'text-primary');
-                    item.classList.add('text-gray-600');
+                    // 移除所有选中状态
+                    navLinks.forEach(item => {
+                        item.classList.remove('bg-primary/10', 'text-primary');
+                        item.classList.add('text-gray-600');
+                    });
+
+                    // 添加当前选中状态
+                    this.classList.remove('text-gray-600');
+                    this.classList.add('bg-primary/10', 'text-primary');
+
+                    // 根据点击的链接加载对应的内容
+                    const target = this.textContent.trim();
+                    loadContent(target);
                 });
-
-                // 添加当前选中状态
-                this.classList.remove('text-gray-600');
-                this.classList.add('bg-primary/10', 'text-primary');
-
-                // 根据点击的链接加载对应的内容
-                const target = this.textContent.trim();
-                loadContent(target);
             });
+
+            // 加载内容的函数
+            function loadContent(target) {
+                const contentArea = document.querySelector('#content-area');
+
+                if (target === '知识图谱') {
+                    // 知识图谱加载逻辑保持不变
+                    fetch('/main/knowledge-graph', {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                       .then(response => response.text())
+                       .then(html => {
+                            contentArea.innerHTML = html;
+                        })
+                       .catch(error => {
+                            console.error('加载知识图谱失败:', error);
+                            contentArea.innerHTML = `
+                                <h2 class="text-2xl font-bold text-gray-800 mb-4">知识图谱节点展示</h2>
+                                <p class="text-gray-600 text-red-500">加载知识图谱失败: ${error.message}</p>
+                            `;
+                        });
+                } else if (target === '算法模板') {
+                    // 加载算法模板内容
+                    fetch('/main/algorithm-templates', {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                       .then(response => response.text())
+                       .then(html => {
+                            contentArea.innerHTML = html;
+                        })
+                       .catch(error => {
+                            console.error('加载算法模板失败:', error);
+                            contentArea.innerHTML = `
+                                <h2 class="text-2xl font-bold text-gray-800 mb-4">算法模板列表</h2>
+                                <p class="text-gray-600 text-red-500">加载算法模板失败: ${error.message}</p>
+                            `;
+                        });
+                }
+            }
+
+            // 处理浏览器前进/后退按钮
+            window.addEventListener('popstate', function () {
+                const path = window.location.pathname;
+
+                if (path.endsWith('/knowledge-graph')) {
+                    document.querySelector('aside ul li a:contains("知识图谱")').click();
+                } else if (path.endsWith('/algorithm-templates')) {
+                    document.querySelector('aside ul li a:contains("算法模板")').click();
+                }
+            });
+
+            // 初始加载当前页面内容
+            const initialPath = window.location.pathname;
+            if (initialPath.endsWith('/algorithm-templates')) {
+                loadContent('算法模板');
+            }
         });
 
-        // 加载内容的函数
-        function loadContent(target) {
-            const contentArea = document.querySelector('#content-area');
+        document.addEventListener('DOMContentLoaded', function () {
+            // 检查URL参数中是否有login_success标志
+            const urlParams = new URLSearchParams(window.location.search);
+            const loginSuccess = urlParams.get('login_success');
 
-            if (target === '知识图谱') {
-                // 知识图谱加载逻辑保持不变
-                fetch('/main/knowledge-graph', {
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
-                    .then(response => response.text())
-                    .then(html => {
-                        contentArea.innerHTML = html;
-                    })
-                    .catch(error => {
-                        console.error('加载知识图谱失败:', error);
-                        contentArea.innerHTML = `
-                            <h2 class="text-2xl font-bold text-gray-800 mb-4">知识图谱节点展示</h2>
-                            <p class="text-gray-600 text-red-500">加载知识图谱失败: ${error.message}</p>
-                        `;
-                    });
-            } else if (target === '算法模板') {
-                // 加载算法模板内容
-                fetch('/main/algorithm-templates', {
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
-                    .then(response => response.text())
-                    .then(html => {
-                        contentArea.innerHTML = html;
-                    })
-                    .catch(error => {
-                        console.error('加载算法模板失败:', error);
-                        contentArea.innerHTML = `
-                            <h2 class="text-2xl font-bold text-gray-800 mb-4">算法模板列表</h2>
-                            <p class="text-gray-600 text-red-500">加载算法模板失败: ${error.message}</p>
-                        `;
-                    });
-            }
-        }
+            if (loginSuccess === 'true') {
+                // 获取用户角色
+                var role = "{{ session.get('role', 0) }}";
+                var welcomeMessage = document.getElementById('welcome-message');
 
-        // 处理浏览器前进/后退按钮
-        window.addEventListener('popstate', function () {
-            const path = window.location.pathname;
+                // 根据角色显示不同的欢迎消息
+                if (role == -1) {
+                    welcomeMessage.textContent = "欢迎管理员登录系统";
+                } else {
+                    welcomeMessage.textContent = "欢迎用户登录系统";
+                }
 
-            if (path.endsWith('/knowledge-graph')) {
-                document.querySelector('aside ul li a:contains("知识图谱")').click();
-            } else if (path.endsWith('/algorithm-templates')) {
-                document.querySelector('aside ul li a:contains("算法模板")').click();
-            }
-        });
-
-        // 初始加载当前页面内容
-        const initialPath = window.location.pathname;
-        if (initialPath.endsWith('/algorithm-templates')) {
-            loadContent('算法模板');
-        }
-    });
-
-    document.addEventListener('DOMContentLoaded', function () {
-        // 检查URL参数中是否有login_success标志
-        const urlParams = new URLSearchParams(window.location.search);
-        const loginSuccess = urlParams.get('login_success');
-
-        if (loginSuccess === 'true') {
-            // 获取用户角色
-            var role = "{{ session.get('role', 0) }}";
-            var welcomeMessage = document.getElementById('welcome-message');
-
-            // 根据角色显示不同的欢迎消息
-            if (role == -1) {
-                welcomeMessage.textContent = "欢迎管理员登录系统";
-            } else {
-                welcomeMessage.textContent = "欢迎用户登录系统";
-            }
-
-            // 显示欢迎消息并添加淡入效果
-            welcomeMessage.style.display = 'block';
-            setTimeout(() => {
-                welcomeMessage.style.opacity = '1';
-            }, 100);
-
-            // 3秒后淡出并隐藏欢迎消息
-            setTimeout(function () {
-                welcomeMessage.style.opacity = '0';
+                // 显示欢迎消息并添加淡入效果
+                welcomeMessage.style.display = 'block';
                 setTimeout(() => {
-                    welcomeMessage.style.display = 'none';
+                    welcomeMessage.style.opacity = '1';
+                }, 100);
 
-                    // 移除URL中的login_success参数
-                    history.replaceState(null, null, window.location.pathname);
-                }, 500);
-            }, 3000);
-        }
-    });
+                // 3秒后淡出并隐藏欢迎消息
+                setTimeout(function () {
+                    welcomeMessage.style.opacity = '0';
+                    setTimeout(() => {
+                        welcomeMessage.style.display = 'none';
 
-</script>
+                        // 移除URL中的login_success参数
+                        history.replaceState(null, null, window.location.pathname);
+                    }, 500);
+                }, 3000);
+            }
+        });
+
+    </script>
 
 </body>
 </html>
