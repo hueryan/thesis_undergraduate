@@ -34,6 +34,14 @@
             .min-h-screen-without-header {
                 min-height: calc(100vh - 30rem); /* 减去顶部导航栏高度 */
             }
+
+            /* 随机渐变文本样式 */
+            .gradient-text {
+                background-clip: text;
+                -webkit-background-clip: text;
+                text-fill-color: transparent;
+                -webkit-text-fill-color: transparent;
+            }
         }
     </style>
 </head>
@@ -90,14 +98,14 @@
             <ul class="space-y-2">
                 <li>
                     <a href="{{ url_for('knowledge_graph') }}"
-                       class="flex items-center p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
+                       class="flex items-center p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors gradient-text">
                         <i class="fa fa-sitemap mr-2"></i>
                         <span>知识图谱</span>
                     </a>
                 </li>
                 <li>
                     <a href="{{ url_for('algorithm_templates') }}"
-                       class="flex items-center p-2 rounded-lg bg-primary/10 text-primary">
+                       class="flex items-center p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors gradient-text">
                         <i class="fa fa-code mr-2"></i>
                         <span>算法模板</span>
                     </a>
@@ -221,6 +229,38 @@
             if (initialPath.endsWith('/algorithm-templates')) {
                 loadContent('算法模板');
             }
+
+            // 取消算法模板框高亮
+            navLinks.forEach(link => {
+                link.classList.remove('bg-primary/10', 'text-primary');
+                link.classList.add('text-gray-600');
+            });
+
+            // 根据当前URL确定高亮链接
+            const currentPath = window.location.pathname;
+            navLinks.forEach(link => {
+                if (link.getAttribute('href') === currentPath) {
+                    link.classList.remove('text-gray-600');
+                    link.classList.add('bg-primary/10', 'text-primary');
+                }
+            });
+
+            // 生成随机渐变颜色
+            function getRandomColor() {
+                const letters = '0123456789ABCDEF';
+                let color = '#';
+                for (let i = 0; i < 6; i++) {
+                    color += letters[Math.floor(Math.random() * 16)];
+                }
+                return color;
+            }
+
+            const gradientTexts = document.querySelectorAll('.gradient-text');
+            gradientTexts.forEach(text => {
+                const color1 = getRandomColor();
+                const color2 = getRandomColor();
+                text.style.backgroundImage = `linear-gradient(45deg, ${color1}, ${color2})`;
+            });
         });
 
         document.addEventListener('DOMContentLoaded', function () {

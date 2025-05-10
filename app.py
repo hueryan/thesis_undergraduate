@@ -311,7 +311,7 @@ def knowledge_graph():
                 rel_types = record['relTypes']
 
                 # 获取节点的基本信息
-                node_id = node.id
+                node_id = node.element_id
                 node_name = node.get('name', '未知名称')
                 node_type = list(node.labels)[0] if node.labels else '未知类型'
                 node_description = node.get('description', '无描述')
@@ -554,9 +554,17 @@ def admin_view_algorithm_template(template_id):
     return render_template('admin/algorithm_template_view.html', template=template)
 
 
+def update_algorithm_template(template_id, name, code):
+    """更新算法模板"""
+    with get_mysql_connection() as conn:
+        with conn.cursor() as cursor:
+            sql = f"UPDATE {MYSQL_ALGORITHM_TEMPLATES_TABLE} SET name = %s, code = %s WHERE id = %s"
+            cursor.execute(sql, (name, code, template_id))
+            conn.commit()
+
 @app.route('/admin/algorithm-templates/<int:template_id>/edit', methods=['GET', 'POST'])
 def admin_edit_algorithm_template(template_id):
-    """管理员修改算法模板"""
+    """管理员编辑算法模板"""
     if not is_user_logged_in() or session.get('role') != -1:
         flash('权限不足', 'error')
         return redirect(url_for('main'))
@@ -566,25 +574,24 @@ def admin_edit_algorithm_template(template_id):
         flash('模板不存在', 'error')
         return redirect(url_for('admin_algorithm_templates'))
 
+    # 检查当前用户是否为创建者
+    if template['created_by'] != session.get('user'):
+        flash('你不是该模板的创建者，无权修改', 'error')
+        return redirect(url_for('admin_algorithm_templates'))
+
     if request.method == 'POST':
         name = request.form.get('name')
         code = request.form.get('code')
-        created_by = session.get('user')
 
         if not name or not code:
             flash('名称和代码不能为空', 'error')
             return redirect(request.url)
 
-        with get_mysql_connection() as conn:
-            with conn.cursor() as cursor:
-                sql = f"UPDATE {MYSQL_ALGORITHM_TEMPLATES_TABLE} SET name = %s, code = %s, created_by = %s, created_at = %s WHERE id = %s"
-                cursor.execute(sql, (name, code, created_by, datetime.now(), template_id))
-                conn.commit()
-
-        flash('算法模板修改成功', 'success')
+        update_algorithm_template(template_id, name, code)
+        flash('算法模板更新成功', 'success')
         return redirect(url_for('admin_algorithm_templates'))
 
-    return render_template('admin/algorithm_template_form.html', template=template)
+    return render_template('admin/algorithm_template_edit.html', template=template)
 
 
 # 运行应用

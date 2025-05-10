@@ -49,8 +49,14 @@
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ template.created_by }}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ template.created_at }}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <a href="{{ url_for('admin_view_algorithm_template', template_id=template.id) }}" class="text-primary hover:text-primary/80">查看</a>
-                        <a href="{{ url_for('admin_edit_algorithm_template', template_id=template.id) }}" class="text-primary hover:text-primary/80 ml-2">修改</a>
+                        {#                        <a href="{{ url_for('admin_view_algorithm_template', template_id=template.id) }}" class="text-primary hover:text-primary/80">查看</a>#}
+                        {#                        <a href="{{ url_for('admin_edit_algorithm_template', template_id=template.id) }}" class="text-primary hover:text-primary/80 ml-2">修改</a>#}
+                        <a href="{{ url_for('admin_view_algorithm_template', template_id=template.id) }}"
+                           class="text-primary hover:text-primary/80">查看</a>
+                        {% if template.created_by == session.user %}
+                            <a href="{{ url_for('admin_edit_algorithm_template', template_id=template.id) }}"
+                               class="text-primary hover:text-primary/80 ml-2">编辑</a>
+                        {% endif %}
                     </td>
                 </tr>
                 {% endfor %}
