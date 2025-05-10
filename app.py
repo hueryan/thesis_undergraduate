@@ -339,6 +339,7 @@ def knowledge_graph():
         flash(f'获取知识图谱数据失败: {str(e)}', 'error')
         return redirect(url_for('main'))
 
+
 @app.route('/main/algorithm-templates')
 def algorithm_templates():
     # 确保用户已登录
@@ -349,6 +350,9 @@ def algorithm_templates():
     try:
         # 获取排序参数，默认为按 created_at 降序
         sort = request.args.get('sort', 'desc')
+
+        # 获取搜索关键字
+        search_query = request.args.get('search', '').strip()
 
         # 获取页码，默认为第 1 页
         page = int(request.args.get('page', 1))
@@ -366,14 +370,25 @@ def algorithm_templates():
         # 从数据库获取算法模板数据
         with get_mysql_connection() as conn:
             with conn.cursor() as cursor:
+                # 构建基础 SQL 查询
+                base_sql = f"FROM {MYSQL_ALGORITHM_TEMPLATES_TABLE}"
+
+                # 添加搜索条件
+                if search_query:
+                    base_sql += " WHERE name LIKE %s"
+                    search_param = f"%{search_query}%"
+                    params = (search_param,)
+                else:
+                    params = ()
+
                 # 查询总记录数
-                sql_count = f"SELECT COUNT(*) as total FROM {MYSQL_ALGORITHM_TEMPLATES_TABLE}"
-                cursor.execute(sql_count)
+                sql_count = f"SELECT COUNT(*) as total {base_sql}"
+                cursor.execute(sql_count, params)
                 total = cursor.fetchone()['total']
 
                 # 查询当前页的数据
-                sql = f"SELECT * FROM {MYSQL_ALGORITHM_TEMPLATES_TABLE} {order_by} LIMIT {offset}, {per_page}"
-                cursor.execute(sql)
+                sql = f"SELECT * {base_sql} {order_by} LIMIT {offset}, {per_page}"
+                cursor.execute(sql, params)
                 algorithm_templates = cursor.fetchall()
                 # 动态提取语言名称
                 for template in algorithm_templates:
@@ -429,16 +444,108 @@ def algorithm_templates():
             return render_template('algorithm_templates_list.html',
                                    algorithm_templates=algorithm_templates,
                                    pagination=pagination,
-                                   sort=sort)
+                                   sort=sort,
+                                   search_query=search_query)
         else:
             # 返回完整页面
             return render_template('main.html',
                                    algorithm_templates=algorithm_templates,
                                    pagination=pagination,
-                                   sort=sort)
+                                   sort=sort,
+                                   search_query=search_query)
 
     except Exception as e:
         flash(f'获取算法模板数据失败: {str(e)}', 'error')
+        return redirect(url_for('main'))
+
+
+@app.route('/main/algorithm-templates/random')
+def random_algorithm_templates():
+    # 确保用户已登录
+    if not is_user_logged_in():
+        flash('请先登录')
+        return redirect(url_for('login'))
+
+    try:
+        per_page = 6
+
+        # 从数据库获取所有算法模板数据
+        with get_mysql_connection() as conn:
+            with conn.cursor() as cursor:
+                # 查询总记录数
+                sql_count = f"SELECT COUNT(*) as total FROM {MYSQL_ALGORITHM_TEMPLATES_TABLE}"
+                cursor.execute(sql_count)
+                total = cursor.fetchone()['total']
+
+                # 随机选择数据
+                sql = f"SELECT * FROM {MYSQL_ALGORITHM_TEMPLATES_TABLE} ORDER BY RAND() LIMIT {per_page}"
+                cursor.execute(sql)
+                algorithm_templates = cursor.fetchall()
+                # 动态提取语言名称
+                for template in algorithm_templates:
+                    code = template['code']
+                    # 使用正则匹配代码块开头的语言声明
+                    match = re.search(r'^```([^\s`]+)', code, re.MULTILINE)  # 允许非空白和非反引号字符
+                    if match:
+                        lang = match.group(1).lower()
+                        # 特殊处理常见语言
+                        if lang in ['c++', 'cpp']:
+                            template['language'] = 'C++'
+                        elif lang == 'csharp':
+                            template['language'] = 'C#'
+                        else:
+                            # 首字母大写，保留其他字符
+                            template['language'] = lang.capitalize()
+                    else:
+                        # 备用匹配：注释中的语言声明
+                        alt_match = re.search(r'#\s*language:\s*([^\s#]+)', code, re.IGNORECASE)
+                        if alt_match:
+                            lang = alt_match.group(1).lower()
+                            if lang in ['c++', 'cpp']:
+                                template['language'] = 'C++'
+                            elif lang == 'csharp':
+                                template['language'] = 'C#'
+                            else:
+                                template['language'] = lang.capitalize()
+                        else:
+                            template['language'] = 'Unknown'
+
+        # 计算分页信息
+        total_pages = (total + per_page - 1) // per_page
+        has_prev = False
+        has_next = False
+        prev_num = None
+        next_num = None
+        offset = 0
+
+        pagination = {
+            'page': 1,
+            'per_page': per_page,
+            'total': total,
+            'pages': total_pages,
+            'has_prev': has_prev,
+            'has_next': has_next,
+            'prev_num': prev_num,
+            'next_num': next_num,
+            'offset': offset  # 添加offset用于显示
+        }
+
+        # 判断是否是AJAX请求或者请求部分内容
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.args.get('partial'):
+            # 只返回内容片段
+            return render_template('algorithm_templates_list.html',
+                                   algorithm_templates=algorithm_templates,
+                                   pagination=pagination,
+                                   sort=None)
+        else:
+            # 返回完整页面
+            return render_template('main.html',
+                                   algorithm_templates=algorithm_templates,
+                                   pagination=pagination,
+                                   sort=None)
+
+    except Exception as e:
+        flash(f'获取随机算法模板数据失败: {str(e)}', 'error')
         return redirect(url_for('main'))
 
 
@@ -486,13 +593,6 @@ def admin_algorithm_templates():
     # 获取页码，默认为第 1 页
     page = int(request.args.get('page', 1))
     per_page = 8
-    offset = (page - 1) * per_page
-
-    # 根据排序参数构建 SQL 查询
-    if sort == 'asc':
-        order_by = 'ORDER BY id ASC'
-    else:
-        order_by = 'ORDER BY id DESC'
 
     with get_mysql_connection() as conn:
         with conn.cursor() as cursor:
@@ -512,13 +612,29 @@ def admin_algorithm_templates():
             cursor.execute(sql_count, params)
             total = cursor.fetchone()['total']
 
+            # 计算总页数
+            total_pages = (total + per_page - 1) // per_page
+
+            # 验证页码
+            if page < 1:
+                page = 1
+            elif page > total_pages:
+                page = total_pages
+
+            offset = (page - 1) * per_page
+
+            # 根据排序参数构建 SQL 查询
+            if sort == 'asc':
+                order_by = 'ORDER BY id ASC'
+            else:
+                order_by = 'ORDER BY id DESC'
+
             # 查询当前页的数据
             sql = f"SELECT * {base_sql} {order_by} LIMIT {offset}, {per_page}"
             cursor.execute(sql, params)
             templates = cursor.fetchall()
 
     # 计算分页信息
-    total_pages = (total + per_page - 1) // per_page
     has_prev = page > 1
     has_next = page < total_pages
     prev_num = page - 1 if has_prev else None
@@ -598,6 +714,7 @@ def update_algorithm_template(template_id, name, code):
             cursor.execute(sql, (name, code, template_id))
             conn.commit()
 
+
 @app.route('/admin/algorithm-templates/<int:template_id>/edit', methods=['GET', 'POST'])
 def admin_edit_algorithm_template(template_id):
     """管理员编辑算法模板"""
@@ -628,6 +745,7 @@ def admin_edit_algorithm_template(template_id):
         return redirect(url_for('admin_algorithm_templates'))
 
     return render_template('admin/algorithm_template_edit.html', template=template)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
