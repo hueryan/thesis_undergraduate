@@ -1,15 +1,14 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session
 from configs.database_config import MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PW, MYSQL_DB, MYSQL_USER_TABLE, MYSQL_INVITATION_CODES_TABLE, MYSQL_ALGORITHM_TEMPLATES_TABLE
 from data_structure_kg_workspace.config_neo4j import NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD
+from flask import Flask, render_template, request, redirect, url_for, flash, session
+from dotenv import load_dotenv
+from datetime import datetime
+from neo4j import GraphDatabase
 import pymysql
+import hashlib  # 用于密码哈希
+import secrets
 import re
 import os
-from dotenv import load_dotenv
-from neo4j import GraphDatabase
-import secrets
-from datetime import datetime
-import hashlib  # 用于密码哈希
-ALGORITHM_MD_DIR = 'template_1.md'
 load_dotenv()
 
 app = Flask(__name__)
