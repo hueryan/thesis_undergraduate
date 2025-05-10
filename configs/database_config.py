@@ -3,10 +3,9 @@ import os
 
 # 获取当前脚本所在目录（即 configs 目录）
 current_dir = os.path.dirname(os.path.abspath(__file__))
-env_path = os.path.join(current_dir, "database_config.env")  # 指向 configs/database_config.env
+env_path = os.path.join(current_dir, "database_config.env")
 mysql_configs = dotenv_values(env_path)
 
-# mysql_configs = dotenv_values('./database_config.env')
 
 MYSQL_HOST = mysql_configs['MYSQL_HOST']
 MYSQL_PORT = mysql_configs['MYSQL_PORT']

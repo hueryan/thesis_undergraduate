@@ -1,7 +1,7 @@
 from pymilvus import connections, FieldSchema, CollectionSchema, DataType, Collection, utility, MilvusClient
-from config import MILVUS_COLLECTION_NAME, MODEL_NAME
+from config_milvus import MILVUS_COLLECTION_NAME, MODEL_NAME
 from embedding_model import model_dim
-from config import DB_NAME as db_name
+from config_milvus import DB_NAME as db_name
 
 class MilvusManager:
     def __init__(self):

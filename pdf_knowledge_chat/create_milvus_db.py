@@ -1,5 +1,5 @@
 from pymilvus import MilvusClient
-from config import DB_NAME as db_name
+from config_milvus import DB_NAME as db_name
 
 client = MilvusClient()
 

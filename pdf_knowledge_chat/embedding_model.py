@@ -1,5 +1,5 @@
 from langchain_community.embeddings import HuggingFaceBgeEmbeddings
-from config import MODEL_NAME
+from config_milvus import MODEL_NAME
 
 MODEL_DIM_MAPPING = {
     "BAAI/bge-small-zh-v1.5": 512,

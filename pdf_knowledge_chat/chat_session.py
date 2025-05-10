@@ -2,7 +2,7 @@
 import time
 from embedding_model import embedding_model
 from milvus_manager import MilvusManager
-from config import DEEPSEEK_API_KEY
+from config_milvus import DEEPSEEK_API_KEY
 from langchain_openai import ChatOpenAI
 
 

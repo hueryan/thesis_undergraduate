@@ -1,7 +1,7 @@
 import time
 from embedding_model import embedding_model
 from milvus_manager import MilvusManager
-from config import MODEL_NAME
+from config_milvus import MODEL_NAME
 
 
 def process_and_store_pdf(pdf_path):

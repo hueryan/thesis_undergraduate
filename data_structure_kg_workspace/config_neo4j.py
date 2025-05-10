@@ -3,7 +3,7 @@ import os
 
 # 获取当前脚本所在目录（即 configs 目录）
 current_dir = os.path.dirname(os.path.abspath(__file__))
-env_path = os.path.join(current_dir, "neo4j.env")  # 指向 configs/database_config.env
+env_path = os.path.join(current_dir, "neo4j_config.env")
 configs = dotenv_values(env_path)
 
 # 获取环境变量
@@ -16,4 +16,3 @@ DOUBAO_API_KEY = configs['DOUBAO_API_KEY']
 
 # print(IMAGE_PATH.split('/')[-1].split('.png')[0])
 
-# print(f"txt/{IMAGE_PATH.split('/')[-1].split('.png')[0]}.txt")

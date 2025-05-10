@@ -1,6 +1,6 @@
 from pymilvus import connections, utility
-from config import MILVUS_COLLECTION_NAME
-from config import DB_NAME as db_name
+from config_milvus import MILVUS_COLLECTION_NAME
+from config_milvus import DB_NAME as db_name
 
 def reset_milvus_collection():
     try:
