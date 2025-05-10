@@ -192,6 +192,9 @@
                 {% if leaf_nodes %}
                     <!-- 直接渲染知识图谱内容 -->
                     {% include 'node_show.html' %}
+                {% elif algorithm_templates %}
+                    <!-- 渲染算法模板内容 -->
+                    {% include 'algorithm_templates_list.html' %}
                 {% else %}
                     <!-- 默认内容 -->
                     <h2 class="text-2xl font-bold text-gray-800 mb-4">知识图谱节点展示</h2>
@@ -214,89 +217,121 @@
                     }
                     e.preventDefault();
 
-                    // 更新URL
-                    history.pushState(null, null, this.getAttribute('href'));
+                    // 获取目标页面和页码
+                    const target = this.textContent.trim();
+                    const href = this.getAttribute('href');
+                    const url = new URL(href, window.location.origin);
+                    const page = url.searchParams.get('page') || 1;
 
-                    // 移除所有选中状态
+                    // 加载内容
+                    loadContent(target, page);
+
+                    // 更新URL
+                    history.pushState(null, null, href);
+
+                    // 更新导航高亮
                     navLinks.forEach(item => {
                         item.classList.remove('bg-primary/10', 'text-primary');
                         item.classList.add('text-gray-600');
                     });
-
-                    // 添加当前选中状态
                     this.classList.remove('text-gray-600');
                     this.classList.add('bg-primary/10', 'text-primary');
-
-                    // 根据点击的链接加载对应的内容
-                    const target = this.textContent.trim();
-                    loadContent(target);
                 });
             });
 
-            // 加载内容的函数
-            function loadContent(target) {
+            // 加载内容的函数 - 更新以传递页码参数
+            function loadContent(target, page = 1) {
                 const contentArea = document.querySelector('#content-area');
 
+                // 根据目标和页码构建URL
+                let url = '';
                 if (target === '知识图谱') {
-                    // 知识图谱加载逻辑保持不变
-                    fetch('/main/knowledge-graph', {
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    })
-                       .then(response => response.text())
-                       .then(html => {
-                            contentArea.innerHTML = html;
-                        })
-                       .catch(error => {
-                            console.error('加载知识图谱失败:', error);
-                            contentArea.innerHTML = `
-                                <h2 class="text-2xl font-bold text-gray-800 mb-4">知识图谱节点展示</h2>
-                                <p class="text-gray-600 text-red-500">加载知识图谱失败: ${error.message}</p>
-                            `;
-                        });
+                    url = `/main/knowledge-graph?page=${page}`;
                 } else if (target === '算法模板') {
-                    // 加载算法模板内容
-                    fetch('/main/algorithm-templates', {
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    })
-                       .then(response => response.text())
-                       .then(html => {
-                            contentArea.innerHTML = html;
-                        })
-                       .catch(error => {
-                            console.error('加载算法模板失败:', error);
-                            contentArea.innerHTML = `
-                                <h2 class="text-2xl font-bold text-gray-800 mb-4">算法模板列表</h2>
-                                <p class="text-gray-600 text-red-500">加载算法模板失败: ${error.message}</p>
-                            `;
-                        });
+                    url = `/main/algorithm-templates?page=${page}`;
                 }
+
+                fetch(url, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.text())
+                .then(html => {
+                    contentArea.innerHTML = html;
+                    // 更新URL但不刷新页面
+                    history.pushState(null, null, url);
+                })
+                .catch(error => {
+                    console.error(`加载${target}失败:`, error);
+                    contentArea.innerHTML = `
+                        <h2 class="text-2xl font-bold text-gray-800 mb-4">${target}</h2>
+                        <p class="text-gray-600 text-red-500">加载失败: ${error.message}</p>
+                    `;
+                });
             }
 
-            // 处理浏览器前进/后退按钮
-            window.addEventListener('popstate', function () {
-                const path = window.location.pathname;
+            // 处理分页按钮的事件
+            document.addEventListener('click', function(e) {
+                // 处理分页链接点击
+                if (e.target.closest('a[href^="?page="]')) {
+                    e.preventDefault();
+                    const href = e.target.closest('a').getAttribute('href');
+                    const page = new URLSearchParams(href).get('page');
 
-                if (path.endsWith('/knowledge-graph')) {
-                    document.querySelector('aside ul li a:contains("知识图谱")').click();
-                } else if (path.endsWith('/algorithm-templates')) {
-                    document.querySelector('aside ul li a:contains("算法模板")').click();
+                    // 确定当前活动的导航项
+                    const activeNavItem = document.querySelector('aside ul li a.bg-primary/10');
+                    const target = activeNavItem ? activeNavItem.textContent.trim() : null;
+
+                    if (target) {
+                        loadContent(target, page);
+                    }
                 }
             });
 
-            // 初始加载当前页面内容
-            const initialPath = window.location.pathname;
-            if (initialPath.endsWith('/algorithm-templates')) {
-                loadContent('算法模板');
+            // 处理浏览器前进/后退按钮
+            window.addEventListener('popstate', function() {
+                const path = window.location.pathname;
+                const params = new URLSearchParams(window.location.search);
+                const page = params.get('page') || 1;
+
+                if (path.endsWith('/knowledge-graph')) {
+                    loadContent('知识图谱', page);
+                    // 更新导航高亮
+                    navLinks.forEach(item => {
+                        item.classList.remove('bg-primary/10', 'text-primary');
+                        item.classList.add('text-gray-600');
+                    });
+                    document.querySelector('aside ul li a:contains("知识图谱")').classList.remove('text-gray-600');
+                    document.querySelector('aside ul li a:contains("知识图谱")').classList.add('bg-primary/10', 'text-primary');
+                } else if (path.endsWith('/algorithm-templates')) {
+                    loadContent('算法模板', page);
+                    // 更新导航高亮
+                    navLinks.forEach(item => {
+                        item.classList.remove('bg-primary/10', 'text-primary');
+                        item.classList.add('text-gray-600');
+                    });
+                    document.querySelector('aside ul li a:contains("算法模板")').classList.remove('text-gray-600');
+                    document.querySelector('aside ul li a:contains("算法模板")').classList.add('bg-primary/10', 'text-primary');
+                }
+            });
+
+            // 页面加载时处理当前URL中的页码参数
+            const urlParams = new URLSearchParams(window.location.search);
+            const page = urlParams.get('page') || 1;
+
+            // 根据当前路径确定加载哪个内容
+            const path = window.location.pathname;
+            if (path.endsWith('/algorithm-templates')) {
+                loadContent('算法模板', page);
+            } else if (path.endsWith('/knowledge-graph')) {
+                loadContent('知识图谱', page);
             }
 
-            // 取消算法模板框高亮
-            navLinks.forEach(link => {
-                link.classList.remove('bg-primary/10', 'text-primary');
-                link.classList.add('text-gray-600');
+            // 更新导航高亮
+            navLinks.forEach(item => {
+                item.classList.remove('bg-primary/10', 'text-primary');
+                item.classList.add('text-gray-600');
             });
 
             // 根据当前URL确定高亮链接

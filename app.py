@@ -347,47 +347,45 @@ def algorithm_templates():
         return redirect(url_for('login'))
 
     try:
-        # 模拟从数据库获取算法模板数据
-        # 实际应用中，这里应该查询数据库获取真实数据
-        algorithm_templates = [
-            {
-                'id': 1,
-                'name': '冒泡排序',
-                'category': '排序算法',
-                'language': 'Python',
-                'updated_at': '2025-05-05',
-                'description': '简单直观的排序算法，时间复杂度 O(n²)'
-            },
-            {
-                'id': 2,
-                'name': '快速排序',
-                'category': '排序算法',
-                'language': 'Python',
-                'updated_at': '2025-05-05',
-                'description': '高效的分治排序算法，平均时间复杂度 O(nlogn)'
-            },
-            {
-                'id': 3,
-                'name': '深度优先搜索',
-                'category': '图算法',
-                'language': 'Java',
-                'updated_at': '2025-05-05',
-                'description': '图的遍历算法，用于遍历或搜索树或图'
-            },
-            # 可以添加更多算法模板...
-        ]
+        # 获取页码，默认为第 1 页
+        page = int(request.args.get('page', 1))
+        per_page = 6
+        offset = (page - 1) * per_page
 
-        # 分页信息
+        # 从数据库获取算法模板数据
+        with get_mysql_connection() as conn:
+            with conn.cursor() as cursor:
+                # 查询总记录数
+                sql_count = f"SELECT COUNT(*) as total FROM {MYSQL_ALGORITHM_TEMPLATES_TABLE}"
+                cursor.execute(sql_count)
+                total = cursor.fetchone()['total']
+
+                # 查询当前页的数据
+                sql = f"SELECT * FROM {MYSQL_ALGORITHM_TEMPLATES_TABLE} ORDER BY created_at DESC LIMIT {offset}, {per_page}"
+                cursor.execute(sql)
+                algorithm_templates = cursor.fetchall()
+
+        # 计算分页信息
+        total_pages = (total + per_page - 1) // per_page
+        has_prev = page > 1
+        has_next = page < total_pages
+        prev_num = page - 1 if has_prev else None
+        next_num = page + 1 if has_next else None
+
         pagination = {
-            'offset': 0,
-            'limit': 9,
-            'total': len(algorithm_templates),
-            'has_prev': False,
-            'has_next': False
+            'page': page,
+            'per_page': per_page,
+            'total': total,
+            'pages': total_pages,
+            'has_prev': has_prev,
+            'has_next': has_next,
+            'prev_num': prev_num,
+            'next_num': next_num,
+            'offset': offset  # 添加offset用于显示
         }
 
-        # 判断是否是 AJAX 请求
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        # 判断是否是AJAX请求或者请求部分内容
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.args.get('partial'):
             # 只返回内容片段
             return render_template('algorithm_templates_list.html',
                                    algorithm_templates=algorithm_templates,

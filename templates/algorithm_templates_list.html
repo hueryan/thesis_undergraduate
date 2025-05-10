@@ -30,12 +30,12 @@
             显示 {{ pagination.offset + 1 }} 到 {{ pagination.offset + algorithm_templates|length }} 条，共 {{ pagination.total }} 条
         </div>
         <div class="flex space-x-2">
-            <button class="px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" {% if not pagination.has_prev %}disabled{% endif %}>
+            <a href="{{ url_for('algorithm_templates', page=pagination.prev_num) }}" class="px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" {% if not pagination.has_prev %}disabled{% endif %}>
                 <i class="fa fa-chevron-left"></i>
-            </button>
-            <button class="px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" {% if not pagination.has_next %}disabled{% endif %}>
+            </a>
+            <a href="{{ url_for('algorithm_templates', page=pagination.next_num) }}" class="px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" {% if not pagination.has_next %}disabled{% endif %}>
                 <i class="fa fa-chevron-right"></i>
-            </button>
+            </a>
         </div>
     </div>
 {% endblock %}
