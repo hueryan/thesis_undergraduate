@@ -42,6 +42,63 @@
                 text-fill-color: transparent;
                 -webkit-text-fill-color: transparent;
             }
+
+            /* 新增样式：左侧导航栏收缩状态 */
+            .sidebar-collapsed {
+                width: 0;
+                padding: 0;
+                overflow: hidden;
+            }
+
+            /* 新增样式：主内容区域在导航栏收缩时的样式 */
+            .main-expanded {
+                margin-left: 0;
+            }
+
+            /* 新增样式：拖拽条 */
+            .resizer {
+                position: absolute;
+                top: 0;
+                right: 0;
+                width: 5px;
+                height: 100%;
+                cursor: col-resize;
+                background-color: #ccc;
+            }
+
+            /* 新增：豆包风格图标 */
+            .doubao-icon {
+                display: inline-block;
+                width: 24px;
+                height: 24px;
+                background-color: #6366F1;
+                border-radius: 6px;
+                position: relative;
+            }
+
+            .doubao-icon::before {
+                content: '';
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 14px;
+                height: 14px;
+                background-color: white;
+                border-radius: 3px;
+            }
+
+            .doubao-icon::after {
+                content: '';
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -40%);
+                width: 8px;
+                height: 8px;
+                background-color: #6366F1;
+                border-radius: 2px;
+            }
         }
     </style>
 </head>
@@ -49,14 +106,19 @@
 <body class="font-inter bg-gray-50 text-gray-800 min-h-screen flex flex-col">
     <!-- 顶部导航栏 -->
     <header class="bg-white nav-shadow sticky top-0 z-50">
-        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
-            <div class="flex items-center space-x-2">
-                <i class="fa fa-sitemap text-primary text-2xl"></i>
+        <div class="container mx-auto px-0 py-3 flex justify-between items-center">
+            <!-- 新增：收缩/展开导航栏按钮 -->
+            <button id="sidebar-toggle" class="ml-2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                title="收缩/展开导航栏">
+                <i class="fa fa-bars"></i>
+            </button>
+            <div class="flex items-center space-x-2 ml-2">
+                <div class="doubao-icon"></div>
                 <h1 class="text-xl font-bold text-gray-800">知识图谱平台</h1>
             </div>
 
             <!-- 用户信息区域 -->
-            <div class="relative group">
+            <div class="relative group mr-4">
                 <div class="flex items-center space-x-2 cursor-pointer">
                     {% if session.get('role') == -1 %}
                         <span class="px-2 py-1 rounded bg-admin/10 text-admin text-sm font-medium">管理员</span>
@@ -93,7 +155,7 @@
     <!-- 主内容区域 -->
     <div class="flex min-h-screen-without-header">
         <!-- 左侧导航栏 -->
-        <aside class="w-64 bg-white shadow-md p-6 h-screen sticky top-0 overflow-y-auto">
+        <aside id="sidebar" class="w-64 bg-white shadow-md p-6 h-screen sticky top-0 overflow-y-auto relative">
             <h2 class="text-lg font-bold text-gray-800 mb-4">导航菜单</h2>
             <ul class="space-y-2">
                 <li>
@@ -121,10 +183,11 @@
                     </li>
                 {% endif %} -->
             </ul>
+            <!-- 新增：拖拽条 -->
+            <div class="resizer" id="resizer"></div>
         </aside>
         <!-- 主内容 -->
-
-        <main class="flex-1 p-6 overflow-y-auto">
+        <main id="main-content" class="flex-1 p-6 overflow-y-auto">
             <div class="bg-white rounded-xl shadow-md p-6 h-full" id="content-area">
                 {% if leaf_nodes %}
                     <!-- 直接渲染知识图谱内容 -->
@@ -260,6 +323,42 @@
                 const color1 = getRandomColor();
                 const color2 = getRandomColor();
                 text.style.backgroundImage = `linear-gradient(45deg, ${color1}, ${color2})`;
+            });
+
+            // 处理左侧导航栏收缩/展开
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('main-content');
+            const sidebarToggle = document.getElementById('sidebar-toggle');
+
+            sidebarToggle.addEventListener('click', function () {
+                sidebar.classList.toggle('sidebar-collapsed');
+                mainContent.classList.toggle('main-expanded');
+            });
+
+            // 处理左侧导航栏拖拽调整大小
+            const resizer = document.getElementById('resizer');
+            let isResizing = false;
+
+            resizer.addEventListener('mousedown', function (e) {
+                isResizing = true;
+                document.body.style.cursor = 'col-resize';
+            });
+
+            document.addEventListener('mousemove', function (e) {
+                if (isResizing) {
+                    const newWidth = e.clientX;
+                    // 限制最小宽度
+                    if (newWidth >= 64) {
+                        sidebar.style.width = newWidth + 'px';
+                    }
+                }
+            });
+
+            document.addEventListener('mouseup', function () {
+                if (isResizing) {
+                    isResizing = false;
+                    document.body.style.cursor = 'default';
+                }
             });
         });
 

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -68,13 +69,22 @@
                 @apply w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition duration-200;
             }
         }
+        #separator {
+            width: 5px;
+            background-color: #ccc;
+            cursor: col-resize;
+        }
     </style>
 </head>
+
 <body class="font-inter bg-gray-50 text-gray-800 min-h-screen flex flex-col">
     <!-- 顶部导航栏 -->
     <header class="bg-white shadow-md sticky top-0 z-50">
         <div class="container mx-auto px-4 py-3 flex justify-between items-center">
             <div class="flex items-center space-x-2">
+                <button id="sidebar-toggle" class="text-gray-600 hover:text-primary transition">
+                    <i class="fa fa-bars"></i>
+                </button>
                 <i class="fa fa-cogs text-admin text-2xl"></i>
                 <h1 class="text-xl font-bold text-gray-800">管理员面板</h1>
             </div>
@@ -112,7 +122,7 @@
     <!-- 主内容区域 -->
     <div class="flex min-h-screen">
         <!-- 左侧导航栏 -->
-        <aside class="w-64 bg-white shadow-md p-6 h-screen sticky top-0 overflow-y-auto">
+        <aside id="sidebar" class="w-64 bg-white shadow-md p-6 h-screen sticky top-0 overflow-y-auto transition-all duration-300">
             <h2 class="text-lg font-bold text-gray-800 mb-6">管理菜单</h2>
             <ul class="space-y-1">
                 <li>
@@ -136,9 +146,10 @@
                 </li>
             </ul>
         </aside>
-
+        <!-- 分隔条 -->
+        <div id="separator"></div>
         <!-- 右侧内容区 -->
-        <main class="flex-1 p-6 overflow-y-auto">
+        <main id="main-content" class="flex-1 p-6 overflow-y-auto transition-all duration-300">
             <div class="max-w-7xl mx-auto">
                 <!-- 页面标题 -->
                 <div class="mb-8">
@@ -155,7 +166,6 @@
     </div>
 
     <script>
-        // 添加动画效果
         document.addEventListener('DOMContentLoaded', function() {
             // 为卡片添加悬停效果
             const cards = document.querySelectorAll('.card-hover');
@@ -177,7 +187,49 @@
                     });
                 });
             });
+
+            // 处理侧边栏收缩
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('main-content');
+            const sidebarToggle = document.getElementById('sidebar-toggle');
+
+            sidebarToggle.addEventListener('click', function() {
+                if (sidebar.classList.contains('w-64')) {
+                    sidebar.classList.remove('w-64');
+                    sidebar.classList.add('w-0', 'p-0');
+                    mainContent.classList.add('pl-0');
+                } else {
+                    sidebar.classList.remove('w-0', 'p-0');
+                    sidebar.classList.add('w-64');
+                    mainContent.classList.remove('pl-0');
+                }
+            });
+
+            // 处理侧边栏宽度缩放
+            const separator = document.getElementById('separator');
+            let isDragging = false;
+            let startX;
+            let startWidth;
+
+            separator.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                startX = e.clientX;
+                startWidth = sidebar.offsetWidth;
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    const deltaX = e.clientX - startX;
+                    const newWidth = startWidth + deltaX;
+                    sidebar.style.width = newWidth + 'px';
+                }
+            });
+
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
         });
     </script>
 </body>
+
 </html>
