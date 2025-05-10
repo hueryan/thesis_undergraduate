@@ -104,76 +104,76 @@
 </head>
 
 <body class="font-inter bg-gray-50 text-gray-800 min-h-screen flex flex-col">
-    <!-- 顶部导航栏 -->
-    <header class="bg-white nav-shadow sticky top-0 z-50">
-        <div class="container mx-auto px-0 py-3 flex justify-between items-center">
-            <!-- 新增：收缩/展开导航栏按钮 -->
-            <button id="sidebar-toggle" class="ml-2 text-gray-500 hover:text-gray-700 focus:outline-none"
+<!-- 顶部导航栏 -->
+<header class="bg-white nav-shadow sticky top-0 z-50">
+    <div class="container mx-auto px-0 py-3 flex justify-between items-center">
+        <!-- 新增：收缩/展开导航栏按钮 -->
+        <button id="sidebar-toggle" class="ml-2 text-gray-500 hover:text-gray-700 focus:outline-none"
                 title="收缩/展开导航栏">
-                <i class="fa fa-bars"></i>
-            </button>
-            <div class="flex items-center space-x-2 ml-2">
-                <div class="doubao-icon"></div>
-                <h1 class="text-xl font-bold text-gray-800">知识图谱平台</h1>
+            <i class="fa fa-bars"></i>
+        </button>
+        <div class="flex items-center space-x-2 ml-2">
+            <div class="doubao-icon"></div>
+            <h1 class="text-xl font-bold text-gray-800">知识图谱平台</h1>
+        </div>
+
+        <!-- 用户信息区域 -->
+        <div class="relative group mr-4">
+            <div class="flex items-center space-x-2 cursor-pointer">
+                {% if session.get('role') == -1 %}
+                    <span class="px-2 py-1 rounded bg-admin/10 text-admin text-sm font-medium">管理员</span>
+                {% endif %}
+                <span class="text-gray-800 font-medium">{{ session.get('user', '未登录') }}</span>
+                <i class="fa fa-chevron-down text-xs text-gray-500 group-hover:rotate-180 transition-transform duration-200"></i>
             </div>
 
-            <!-- 用户信息区域 -->
-            <div class="relative group mr-4">
-                <div class="flex items-center space-x-2 cursor-pointer">
-                    {% if session.get('role') == -1 %}
-                        <span class="px-2 py-1 rounded bg-admin/10 text-admin text-sm font-medium">管理员</span>
-                    {% endif %}
-                    <span class="text-gray-800 font-medium">{{ session.get('user', '未登录') }}</span>
-                    <i class="fa fa-chevron-down text-xs text-gray-500 group-hover:rotate-180 transition-transform duration-200"></i>
-                </div>
-
-                <!-- 下拉菜单 -->
-                <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-right group-hover:translate-y-0 translate-y-2">
-                    <a href="{{ url_for('change_password') }}"
+            <!-- 下拉菜单 -->
+            <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-right group-hover:translate-y-0 translate-y-2">
+                <a href="{{ url_for('change_password') }}"
+                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    <i class="fa fa-key mr-2"></i>重置密码
+                </a>
+                <a href="{{ url_for('logout') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    <i class="fa fa-sign-out mr-2"></i>退出登录
+                </a>
+                <!-- 添加算法模板管理菜单项 -->
+                {% if session.get('role') == -1 %}
+                    <a href="{{ url_for('admin_index') }}"
                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                        <i class="fa fa-key mr-2"></i>重置密码
+                        <i class="fa fa-cog mr-2"></i>管理员菜单
                     </a>
-                    <a href="{{ url_for('logout') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                        <i class="fa fa-sign-out mr-2"></i>退出登录
-                    </a>
-                    <!-- 添加算法模板管理菜单项 -->
-                    {% if session.get('role') == -1 %}
-                        <a href="{{ url_for('admin_index') }}"
-                           class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                            <i class="fa fa-cog mr-2"></i>管理员菜单
-                        </a>
-                    {% endif %}
-                </div>
+                {% endif %}
             </div>
         </div>
-    </header>
+    </div>
+</header>
 
-    <div id="welcome-message"
-         class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-lg shadow-lg bg-green-500 text-white opacity-0 transition-opacity duration-500"
-         style="display: none;"></div>
+<div id="welcome-message"
+     class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-lg shadow-lg bg-green-500 text-white opacity-0 transition-opacity duration-500"
+     style="display: none;"></div>
 
-    <!-- 主内容区域 -->
-    <div class="flex min-h-screen-without-header">
-        <!-- 左侧导航栏 -->
-        <aside id="sidebar" class="w-64 bg-white shadow-md p-6 h-screen sticky top-0 overflow-y-auto relative">
-            <h2 class="text-lg font-bold text-gray-800 mb-4">导航菜单</h2>
-            <ul class="space-y-2">
-                <li>
-                    <a href="{{ url_for('knowledge_graph') }}"
-                       class="flex items-center p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors gradient-text">
-                        <i class="fa fa-sitemap mr-2"></i>
-                        <span>知识图谱</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="{{ url_for('algorithm_templates') }}"
-                       class="flex items-center p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors gradient-text">
-                        <i class="fa fa-code mr-2"></i>
-                        <span>算法模板</span>
-                    </a>
-                </li>
-                <!-- 移除管理员算法模板管理菜单项 -->
-                <!-- {% if session.get('role') == -1 %}
+<!-- 主内容区域 -->
+<div class="flex min-h-screen-without-header">
+    <!-- 左侧导航栏 -->
+    <aside id="sidebar" class="w-64 bg-white shadow-md p-6 h-screen sticky top-0 overflow-y-auto relative">
+        <h2 class="text-lg font-bold text-gray-800 mb-4">导航菜单</h2>
+        <ul class="space-y-2">
+            <li>
+                <a href="{{ url_for('knowledge_graph') }}"
+                   class="flex items-center p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors gradient-text">
+                    <i class="fa fa-sitemap mr-2"></i>
+                    <span>知识图谱</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('algorithm_templates') }}"
+                   class="flex items-center p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors gradient-text">
+                    <i class="fa fa-code mr-2"></i>
+                    <span>算法模板</span>
+                </a>
+            </li>
+            <!-- 移除管理员算法模板管理菜单项 -->
+            <!-- {% if session.get('role') == -1 %}
                     <li>
                         <a href="{{ url_for('admin_algorithm_templates') }}"
                            class="flex items-center p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
@@ -182,80 +182,80 @@
                         </a>
                     </li>
                 {% endif %} -->
-            </ul>
-            <!-- 新增：拖拽条 -->
-            <div class="resizer" id="resizer"></div>
-        </aside>
-        <!-- 主内容 -->
-        <main id="main-content" class="flex-1 p-6 overflow-y-auto">
-            <div class="bg-white rounded-xl shadow-md p-6 h-full" id="content-area">
-                {% if leaf_nodes %}
-                    <!-- 直接渲染知识图谱内容 -->
-                    {% include 'node_show.html' %}
-                {% elif algorithm_templates %}
-                    <!-- 渲染算法模板内容 -->
-                    {% include 'algorithm_templates_list.html' %}
-                {% else %}
-                    <!-- 默认内容 -->
-                    <h2 class="text-2xl font-bold text-gray-800 mb-4">知识图谱节点展示</h2>
-                    <p class="text-gray-600">点击左侧导航栏的"知识图谱"查看内容</p>
-                {% endif %}
-            </div>
-        </main>
-    </div>
+        </ul>
+        <!-- 新增：拖拽条 -->
+        <div class="resizer" id="resizer"></div>
+    </aside>
+    <!-- 主内容 -->
+    <main id="main-content" class="flex-1 p-6 overflow-y-auto">
+        <div class="bg-white rounded-xl shadow-md p-6 h-full" id="content-area">
+            {% if leaf_nodes %}
+                <!-- 直接渲染知识图谱内容 -->
+                {% include 'node_show.html' %}
+            {% elif algorithm_templates %}
+                <!-- 渲染算法模板内容 -->
+                {% include 'algorithm_templates_list.html' %}
+            {% else %}
+                <!-- 默认内容 -->
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">知识图谱节点展示</h2>
+                <p class="text-gray-600">点击左侧导航栏的"知识图谱"查看内容</p>
+            {% endif %}
+        </div>
+    </main>
+</div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // 处理左侧导航栏点击
-            const navLinks = document.querySelectorAll('aside ul li a');
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // 处理左侧导航栏点击
+        const navLinks = document.querySelectorAll('aside ul li a');
 
-            navLinks.forEach(link => {
-                link.addEventListener('click', function (e) {
-                    // 允许管理员链接正常跳转
-                    if (this.getAttribute('href').startsWith('/admin/')) {
-                        return;
-                    }
-                    e.preventDefault();
-
-                    // 获取目标页面和页码
-                    const target = this.textContent.trim();
-                    const href = this.getAttribute('href');
-                    const url = new URL(href, window.location.origin);
-                    const page = url.searchParams.get('page') || 1;
-
-                    // 加载内容
-                    loadContent(target, page);
-
-                    // 更新URL
-                    history.pushState(null, null, href);
-
-                    // 更新导航高亮
-                    navLinks.forEach(item => {
-                        item.classList.remove('bg-primary/10', 'text-primary');
-                        item.classList.add('text-gray-600');
-                    });
-                    this.classList.remove('text-gray-600');
-                    this.classList.add('bg-primary/10', 'text-primary');
-                });
-            });
-
-            // 加载内容的函数 - 更新以传递页码参数
-            function loadContent(target, page = 1) {
-                const contentArea = document.querySelector('#content-area');
-
-                // 根据目标和页码构建URL
-                let url = '';
-                if (target === '知识图谱') {
-                    url = `/main/knowledge-graph?page=${page}`;
-                } else if (target === '算法模板') {
-                    url = `/main/algorithm-templates?page=${page}`;
+        navLinks.forEach(link => {
+            link.addEventListener('click', function (e) {
+                // 允许管理员链接正常跳转
+                if (this.getAttribute('href').startsWith('/admin/')) {
+                    return;
                 }
+                e.preventDefault();
 
-                fetch(url, {
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
+                // 获取目标页面和页码
+                const target = this.textContent.trim();
+                const href = this.getAttribute('href');
+                const url = new URL(href, window.location.origin);
+                const page = url.searchParams.get('page') || 1;
+
+                // 加载内容
+                loadContent(target, page);
+
+                // 更新URL
+                history.pushState(null, null, href);
+
+                // 更新导航高亮
+                navLinks.forEach(item => {
+                    item.classList.remove('bg-primary/10', 'text-primary');
+                    item.classList.add('text-gray-600');
+                });
+                this.classList.remove('text-gray-600');
+                this.classList.add('bg-primary/10', 'text-primary');
+            });
+        });
+
+// 加载内容的函数 - 更新以传递页码和排序参数
+        function loadContent(target, page = 1, sort = 'desc') {
+            const contentArea = document.querySelector('#content-area');
+
+            // 根据目标和页码构建URL
+            let url = '';
+            if (target === '知识图谱') {
+                url = `/main/knowledge-graph?page=${page}`;
+            } else if (target === '算法模板') {
+                url = `/main/algorithm-templates?sort=${sort}&page=${page}`;
+            }
+
+            fetch(url, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
                 .then(response => response.text())
                 .then(html => {
                     contentArea.innerHTML = html;
@@ -265,175 +265,178 @@
                 .catch(error => {
                     console.error(`加载${target}失败:`, error);
                     contentArea.innerHTML = `
-                        <h2 class="text-2xl font-bold text-gray-800 mb-4">${target}</h2>
-                        <p class="text-gray-600 text-red-500">加载失败: ${error.message}</p>
-                    `;
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">${target}</h2>
+            <p class="text-gray-600 text-red-500">加载失败: ${error.message}</p>
+        `;
                 });
+        }
+
+// 处理分页按钮的事件
+        document.addEventListener('click', function (e) {
+            // 处理分页链接点击
+            if (e.target.closest('a[href^="?page="]')) {
+                e.preventDefault();
+                const href = e.target.closest('a').getAttribute('href');
+                const page = new URLSearchParams(href).get('page');
+                {#const sort = new URLSearchParams(window.location.search).get('sort') || 'desc';#}
+                const sort = new URLSearchParams(window.location.search).get('sort') ?? 'desc';
+
+                // 确定当前活动的导航项
+                const activeNavItem = document.querySelector('aside ul li a.bg-primary/10');
+                const target = activeNavItem ? activeNavItem.textContent.trim() : null;
+
+                if (target) {
+                    loadContent(target, page, sort);
+                }
             }
+        });
 
-            // 处理分页按钮的事件
-            document.addEventListener('click', function(e) {
-                // 处理分页链接点击
-                if (e.target.closest('a[href^="?page="]')) {
-                    e.preventDefault();
-                    const href = e.target.closest('a').getAttribute('href');
-                    const page = new URLSearchParams(href).get('page');
-
-                    // 确定当前活动的导航项
-                    const activeNavItem = document.querySelector('aside ul li a.bg-primary/10');
-                    const target = activeNavItem ? activeNavItem.textContent.trim() : null;
-
-                    if (target) {
-                        loadContent(target, page);
-                    }
-                }
-            });
-
-            // 处理浏览器前进/后退按钮
-            window.addEventListener('popstate', function() {
-                const path = window.location.pathname;
-                const params = new URLSearchParams(window.location.search);
-                const page = params.get('page') || 1;
-
-                if (path.endsWith('/knowledge-graph')) {
-                    loadContent('知识图谱', page);
-                    // 更新导航高亮
-                    navLinks.forEach(item => {
-                        item.classList.remove('bg-primary/10', 'text-primary');
-                        item.classList.add('text-gray-600');
-                    });
-                    document.querySelector('aside ul li a:contains("知识图谱")').classList.remove('text-gray-600');
-                    document.querySelector('aside ul li a:contains("知识图谱")').classList.add('bg-primary/10', 'text-primary');
-                } else if (path.endsWith('/algorithm-templates')) {
-                    loadContent('算法模板', page);
-                    // 更新导航高亮
-                    navLinks.forEach(item => {
-                        item.classList.remove('bg-primary/10', 'text-primary');
-                        item.classList.add('text-gray-600');
-                    });
-                    document.querySelector('aside ul li a:contains("算法模板")').classList.remove('text-gray-600');
-                    document.querySelector('aside ul li a:contains("算法模板")').classList.add('bg-primary/10', 'text-primary');
-                }
-            });
-
-            // 页面加载时处理当前URL中的页码参数
-            const urlParams = new URLSearchParams(window.location.search);
-            const page = urlParams.get('page') || 1;
-
-            // 根据当前路径确定加载哪个内容
+        // 处理浏览器前进/后退按钮
+        window.addEventListener('popstate', function () {
             const path = window.location.pathname;
-            if (path.endsWith('/algorithm-templates')) {
-                loadContent('算法模板', page);
-            } else if (path.endsWith('/knowledge-graph')) {
+            const params = new URLSearchParams(window.location.search);
+            const page = params.get('page') || 1;
+
+            if (path.endsWith('/knowledge-graph')) {
                 loadContent('知识图谱', page);
+                // 更新导航高亮
+                navLinks.forEach(item => {
+                    item.classList.remove('bg-primary/10', 'text-primary');
+                    item.classList.add('text-gray-600');
+                });
+                document.querySelector('aside ul li a:contains("知识图谱")').classList.remove('text-gray-600');
+                document.querySelector('aside ul li a:contains("知识图谱")').classList.add('bg-primary/10', 'text-primary');
+            } else if (path.endsWith('/algorithm-templates')) {
+                loadContent('算法模板', page);
+                // 更新导航高亮
+                navLinks.forEach(item => {
+                    item.classList.remove('bg-primary/10', 'text-primary');
+                    item.classList.add('text-gray-600');
+                });
+                document.querySelector('aside ul li a:contains("算法模板")').classList.remove('text-gray-600');
+                document.querySelector('aside ul li a:contains("算法模板")').classList.add('bg-primary/10', 'text-primary');
             }
-
-            // 更新导航高亮
-            navLinks.forEach(item => {
-                item.classList.remove('bg-primary/10', 'text-primary');
-                item.classList.add('text-gray-600');
-            });
-
-            // 根据当前URL确定高亮链接
-            const currentPath = window.location.pathname;
-            navLinks.forEach(link => {
-                if (link.getAttribute('href') === currentPath) {
-                    link.classList.remove('text-gray-600');
-                    link.classList.add('bg-primary/10', 'text-primary');
-                }
-            });
-
-            // 生成随机渐变颜色
-            function getRandomColor() {
-                const letters = '0123456789ABCDEF';
-                let color = '#';
-                for (let i = 0; i < 6; i++) {
-                    color += letters[Math.floor(Math.random() * 16)];
-                }
-                return color;
-            }
-
-            const gradientTexts = document.querySelectorAll('.gradient-text');
-            gradientTexts.forEach(text => {
-                const color1 = getRandomColor();
-                const color2 = getRandomColor();
-                text.style.backgroundImage = `linear-gradient(45deg, ${color1}, ${color2})`;
-            });
-
-            // 处理左侧导航栏收缩/展开
-            const sidebar = document.getElementById('sidebar');
-            const mainContent = document.getElementById('main-content');
-            const sidebarToggle = document.getElementById('sidebar-toggle');
-
-            sidebarToggle.addEventListener('click', function () {
-                sidebar.classList.toggle('sidebar-collapsed');
-                mainContent.classList.toggle('main-expanded');
-            });
-
-            // 处理左侧导航栏拖拽调整大小
-            const resizer = document.getElementById('resizer');
-            let isResizing = false;
-
-            resizer.addEventListener('mousedown', function (e) {
-                isResizing = true;
-                document.body.style.cursor = 'col-resize';
-            });
-
-            document.addEventListener('mousemove', function (e) {
-                if (isResizing) {
-                    const newWidth = e.clientX;
-                    // 限制最小宽度
-                    if (newWidth >= 64) {
-                        sidebar.style.width = newWidth + 'px';
-                    }
-                }
-            });
-
-            document.addEventListener('mouseup', function () {
-                if (isResizing) {
-                    isResizing = false;
-                    document.body.style.cursor = 'default';
-                }
-            });
         });
 
-        document.addEventListener('DOMContentLoaded', function () {
-            // 检查URL参数中是否有login_success标志
-            const urlParams = new URLSearchParams(window.location.search);
-            const loginSuccess = urlParams.get('login_success');
+        // 页面加载时处理当前URL中的页码参数
+        const urlParams = new URLSearchParams(window.location.search);
+        const page = urlParams.get('page') || 1;
+        const sort = urlParams.get('sort') || 'desc';
 
-            if (loginSuccess === 'true') {
-                // 获取用户角色
-                var role = "{{ session.get('role', 0) }}";
-                var welcomeMessage = document.getElementById('welcome-message');
+        // 根据当前路径确定加载哪个内容
+        const path = window.location.pathname;
+        if (path.endsWith('/algorithm-templates')) {
+            loadContent('算法模板', page, sort);
+        } else if (path.endsWith('/knowledge-graph')) {
+            loadContent('知识图谱', page);
+        }
 
-                // 根据角色显示不同的欢迎消息
-                if (role == -1) {
-                    welcomeMessage.textContent = "欢迎管理员登录系统";
-                } else {
-                    welcomeMessage.textContent = "欢迎用户登录系统";
+        // 更新导航高亮
+        navLinks.forEach(item => {
+            item.classList.remove('bg-primary/10', 'text-primary');
+            item.classList.add('text-gray-600');
+        });
+
+        // 根据当前URL确定高亮链接
+        const currentPath = window.location.pathname;
+        navLinks.forEach(link => {
+            if (link.getAttribute('href') === currentPath) {
+                link.classList.remove('text-gray-600');
+                link.classList.add('bg-primary/10', 'text-primary');
+            }
+        });
+
+        // 生成随机渐变颜色
+        function getRandomColor() {
+            const letters = '0123456789ABCDEF';
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        }
+
+        const gradientTexts = document.querySelectorAll('.gradient-text');
+        gradientTexts.forEach(text => {
+            const color1 = getRandomColor();
+            const color2 = getRandomColor();
+            text.style.backgroundImage = `linear-gradient(45deg, ${color1}, ${color2})`;
+        });
+
+        // 处理左侧导航栏收缩/展开
+        const sidebar = document.getElementById('sidebar');
+        const mainContent = document.getElementById('main-content');
+        const sidebarToggle = document.getElementById('sidebar-toggle');
+
+        sidebarToggle.addEventListener('click', function () {
+            sidebar.classList.toggle('sidebar-collapsed');
+            mainContent.classList.toggle('main-expanded');
+        });
+
+        // 处理左侧导航栏拖拽调整大小
+        const resizer = document.getElementById('resizer');
+        let isResizing = false;
+
+        resizer.addEventListener('mousedown', function (e) {
+            isResizing = true;
+            document.body.style.cursor = 'col-resize';
+        });
+
+        document.addEventListener('mousemove', function (e) {
+            if (isResizing) {
+                const newWidth = e.clientX;
+                // 限制最小宽度
+                if (newWidth >= 64) {
+                    sidebar.style.width = newWidth + 'px';
                 }
+            }
+        });
 
-                // 显示欢迎消息并添加淡入效果
-                welcomeMessage.style.display = 'block';
+        document.addEventListener('mouseup', function () {
+            if (isResizing) {
+                isResizing = false;
+                document.body.style.cursor = 'default';
+            }
+        });
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        // 检查URL参数中是否有login_success标志
+        const urlParams = new URLSearchParams(window.location.search);
+        const loginSuccess = urlParams.get('login_success');
+
+        if (loginSuccess === 'true') {
+            // 获取用户角色
+            var role = "{{ session.get('role', 0) }}";
+            var welcomeMessage = document.getElementById('welcome-message');
+
+            // 根据角色显示不同的欢迎消息
+            if (role == -1) {
+                welcomeMessage.textContent = "欢迎管理员登录系统";
+            } else {
+                welcomeMessage.textContent = "欢迎用户登录系统";
+            }
+
+            // 显示欢迎消息并添加淡入效果
+            welcomeMessage.style.display = 'block';
+            setTimeout(() => {
+                welcomeMessage.style.opacity = '1';
+            }, 100);
+
+            // 3秒后淡出并隐藏欢迎消息
+            setTimeout(function () {
+                welcomeMessage.style.opacity = '0';
                 setTimeout(() => {
-                    welcomeMessage.style.opacity = '1';
-                }, 100);
+                    welcomeMessage.style.display = 'none';
 
-                // 3秒后淡出并隐藏欢迎消息
-                setTimeout(function () {
-                    welcomeMessage.style.opacity = '0';
-                    setTimeout(() => {
-                        welcomeMessage.style.display = 'none';
+                    // 移除URL中的login_success参数
+                    history.replaceState(null, null, window.location.pathname);
+                }, 500);
+            }, 3000);
+        }
+    });
 
-                        // 移除URL中的login_success参数
-                        history.replaceState(null, null, window.location.pathname);
-                    }, 500);
-                }, 3000);
-            }
-        });
-
-    </script>
+</script>
 
 </body>
 </html>

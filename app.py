@@ -347,10 +347,21 @@ def algorithm_templates():
         return redirect(url_for('login'))
 
     try:
+        # 获取排序参数，默认为按 created_at 降序
+        sort = request.args.get('sort', 'desc')
+
         # 获取页码，默认为第 1 页
         page = int(request.args.get('page', 1))
         per_page = 6
         offset = (page - 1) * per_page
+
+        # 根据排序参数构建 SQL 查询
+        if sort == 'asc':
+            order_by = 'ORDER BY id ASC'
+        elif sort == 'desc':
+            order_by = 'ORDER BY id DESC'
+        else:
+            order_by = 'ORDER BY created_at DESC'
 
         # 从数据库获取算法模板数据
         with get_mysql_connection() as conn:
@@ -361,7 +372,7 @@ def algorithm_templates():
                 total = cursor.fetchone()['total']
 
                 # 查询当前页的数据
-                sql = f"SELECT * FROM {MYSQL_ALGORITHM_TEMPLATES_TABLE} ORDER BY created_at DESC LIMIT {offset}, {per_page}"
+                sql = f"SELECT * FROM {MYSQL_ALGORITHM_TEMPLATES_TABLE} {order_by} LIMIT {offset}, {per_page}"
                 cursor.execute(sql)
                 algorithm_templates = cursor.fetchall()
                 # 动态提取语言名称
@@ -417,12 +428,14 @@ def algorithm_templates():
             # 只返回内容片段
             return render_template('algorithm_templates_list.html',
                                    algorithm_templates=algorithm_templates,
-                                   pagination=pagination)
+                                   pagination=pagination,
+                                   sort=sort)
         else:
             # 返回完整页面
             return render_template('main.html',
                                    algorithm_templates=algorithm_templates,
-                                   pagination=pagination)
+                                   pagination=pagination,
+                                   sort=sort)
 
     except Exception as e:
         flash(f'获取算法模板数据失败: {str(e)}', 'error')

@@ -1,5 +1,21 @@
 {% block content %}
-    <h2 class="text-2xl font-bold text-gray-800 mb-4">算法模板列表</h2>
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-gray-800">算法模板列表</h2>
+        <div class="flex items-center space-x-2">
+            <button type="button"
+                    onclick="window.location.href='{{ url_for('algorithm_templates', sort='asc', page=1) }}'"
+                    class="p-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition relative"
+                    title="按 ID 正序排序">
+                <i class="fa fa-arrow-up"></i> <!-- 使用更合适的图标 -->
+            </button>
+            <button type="button"
+                    onclick="window.location.href='{{ url_for('algorithm_templates', sort='desc', page=1) }}'"
+                    class="p-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition relative"
+                    title="按 ID 逆序排序">
+                <i class="fa fa-arrow-down"></i> <!-- 使用更合适的图标 -->
+            </button>
+        </div>
+    </div>
 
     <div class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {% for template in algorithm_templates %}
@@ -16,16 +32,18 @@
                 <div class="text-sm text-gray-600 mb-4">
                     <p class="mb-2"><i class="fa fa-code mr-2"></i>语言：{{ template.language }}</p>
                     <p class="mb-2"><i class="fa fa-user mr-2"></i>创建人：{{ template.created_by }}</p>
-                    <p><i class="fa fa-calendar mr-2"></i>创建于：{{ template.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                    <p><i class="fa fa-calendar mr-2"></i>创建于：{{ template.created_at.strftime('%Y-%m-%d %H:%M:%S') }}
+                    </p>
                 </div>
 
-{#                <!-- 代码预览区域 -->#}
-{#                <div class="bg-gray-50 rounded-lg p-3 mt-3 mb-4 text-xs max-h-32 overflow-auto">#}
-{#                    <pre class="text-gray-700"><code>{{ template.code|safe }}</code></pre>#}
-{#                </div>#}
+                {#                <!-- 代码预览区域 -->#}
+                {#                <div class="bg-gray-50 rounded-lg p-3 mt-3 mb-4 text-xs max-h-32 overflow-auto">#}
+                {#                    <pre class="text-gray-700"><code>{{ template.code|safe }}</code></pre>#}
+                {#                </div>#}
 
                 <div class="flex justify-end">
-                    <button class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors" onclick="viewAlgorithm('{{ template.id }}')">
+                    <button class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors"
+                            onclick="viewAlgorithm('{{ template.id }}')">
                         查看详情
                     </button>
                 </div>
@@ -36,13 +54,18 @@
     <!-- 分页控件 -->
     <div class="mt-8 flex justify-between items-center">
         <div class="text-sm text-gray-500">
-            显示 {{ pagination.offset + 1 }} 到 {{ pagination.offset + algorithm_templates|length }} 条，共 {{ pagination.total }} 条
+            显示 {{ pagination.offset + 1 }} 到 {{ pagination.offset + algorithm_templates|length }}
+            条，共 {{ pagination.total }} 条
         </div>
         <div class="flex space-x-2">
-            <a href="{{ url_for('algorithm_templates', page=pagination.prev_num) }}" class="px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" {% if not pagination.has_prev %}disabled{% endif %}>
+            <a href="{{ url_for('algorithm_templates', page=pagination.prev_num, sort=sort) }}"
+               class="px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+               {% if not pagination.has_prev %}disabled{% endif %}>
                 <i class="fa fa-chevron-left"></i>
             </a>
-            <a href="{{ url_for('algorithm_templates', page=pagination.next_num) }}" class="px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" {% if not pagination.has_next %}disabled{% endif %}>
+            <a href="{{ url_for('algorithm_templates', page=pagination.next_num, sort=sort) }}"
+               class="px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+               {% if not pagination.has_next %}disabled{% endif %}>
                 <i class="fa fa-chevron-right"></i>
             </a>
         </div>
