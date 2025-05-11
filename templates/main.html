@@ -239,59 +239,73 @@
             });
         });
 
-// 加载内容的函数 - 更新以传递页码和排序参数
-        function loadContent(target, page = 1, sort = 'desc') {
+        // 加载内容的函数 - 更新以传递页码和排序参数
+        function loadContent(target, page = 1, sort = 'desc', search = '') {
             const contentArea = document.querySelector('#content-area');
 
-            // 根据目标和页码构建URL
-            let url = '';
+            // 构建URL参数
+            const params = new URLSearchParams();
+            if (page > 1) params.set('page', page);
+            if (sort !== 'desc') params.set('sort', sort);
+            if (search) params.set('search', search);
+
+            let url;
             if (target === '知识图谱') {
-                url = `/main/knowledge-graph?page=${page}`;
-            } else if (target === '算法模板') {
-                url = `/main/algorithm-templates?sort=${sort}&page=${page}`;
+                url = `/main/knowledge-graph?${params.toString()}`;
+            } else if (target === '算法模板' &&  window.location.pathname.endsWith('/random')) {
+                const currenUrl = new URL(window.location.page);
+                console.log(currenUrl);
+                url = currenUrl.toString();
+            } else {
+                url = `/main/algorithm-templates?${params.toString()}`;
             }
 
             fetch(url, {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
+                headers: {'X-Requested-With': 'XMLHttpRequest'}
             })
-                .then(response => response.text())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("网络相应不正常");
+                    }
+                    return response.text();
+                })
                 .then(html => {
                     contentArea.innerHTML = html;
+                    // 执行动态加载的脚本
                     contentArea.querySelectorAll('script').forEach(oldScript => {
                         const newScript = document.createElement('script');
                         newScript.textContent = oldScript.textContent;
                         document.body.appendChild(newScript).remove();
                     });
-                    // 更新URL但不刷新页面
-                    history.pushState(null, null, url);
+                    history.replaceState(null, null, url); // 更准确的URL更新
                 })
                 .catch(error => {
-                    console.error(`加载${target}失败:`, error);
+                    console.error(`加载失败:`, error);
                     contentArea.innerHTML = `
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">${target}</h2>
-            <p class="text-gray-600 text-red-500">加载失败: ${error.message}</p>
+            <div class="text-red-500 p-4">
+                加载失败: ${error.message}
+            </div>
         `;
                 });
         }
 
-// 处理分页按钮的事件
+
+        // 处理分页按钮的事件
         document.addEventListener('click', function (e) {
-            // 处理分页链接点击
             if (e.target.closest('a[href^="?page="]')) {
                 e.preventDefault();
                 const href = e.target.closest('a').getAttribute('href');
-                const page = new URLSearchParams(href).get('page');
-                {#const sort = new URLSearchParams(window.location.search).get('sort') || 'desc';#}
-                const sort = new URLSearchParams(window.location.search).get('sort') ?? 'desc';
+                const urlParams = new URLSearchParams(href.split('?')[1] || '');
 
-                // 确定当前活动的导航项
+                const page = urlParams.get('page');
+                const sort = urlParams.get('sort') || 'desc';
+                const search = urlParams.get('search') || '';
+
                 const activeNavItem = document.querySelector('aside ul li a.bg-primary/10');
-                const target = activeNavItem ? activeNavItem.textContent.trim() : null;
+                const target = activeNavItem?.textContent.trim();
 
                 if (target) {
-                    loadContent(target, page, sort);
+                    loadContent(target, page, sort, search);
                 }
             }
         });
@@ -327,11 +341,12 @@
         const urlParams = new URLSearchParams(window.location.search);
         const page = urlParams.get('page') || 1;
         const sort = urlParams.get('sort') || 'desc';
+        const search = urlParams.get('search') || '';
 
         // 根据当前路径确定加载哪个内容
         const path = window.location.pathname;
         if (path.endsWith('/algorithm-templates')) {
-            loadContent('算法模板', page, sort);
+            loadContent('算法模板', page, sort, search);
         } else if (path.endsWith('/knowledge-graph')) {
             loadContent('知识图谱', page);
         }

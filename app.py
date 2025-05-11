@@ -497,19 +497,32 @@ def random_algorithm_templates():
 
     try:
         per_page = 6
+        page = int(request.args.get('page', 1))
+        offset = (page - 1) * per_page
+
+        # 获取或生成随机ID列表
+        if 'random_ids' not in session or request.args.get('new') == 'true':
+            with get_mysql_connection() as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute(f"SELECT id FROM {MYSQL_ALGORITHM_TEMPLATES_TABLE} ORDER BY RAND()")
+                    all_ids = [row['id'] for row in cursor.fetchall()]
+                    session['random_ids'] = all_ids
+                    session.modified = True
+        else:
+            all_ids = session.get('random_ids', [])
+
+        # 获取当前页的ID子集
+        current_ids = all_ids[offset: offset + per_page]
 
         # 从数据库获取所有算法模板数据
         with get_mysql_connection() as conn:
             with conn.cursor() as cursor:
-                # 查询总记录数
-                sql_count = f"SELECT COUNT(*) as total FROM {MYSQL_ALGORITHM_TEMPLATES_TABLE}"
-                cursor.execute(sql_count)
-                total = cursor.fetchone()['total']
-
+                placeholders = ', '.join(['%s'] * len(current_ids))
                 # 随机选择数据
-                sql = f"SELECT * FROM {MYSQL_ALGORITHM_TEMPLATES_TABLE} ORDER BY RAND() LIMIT {per_page}"
-                cursor.execute(sql)
+                sql = f"SELECT * FROM {MYSQL_ALGORITHM_TEMPLATES_TABLE} WHERE id IN ({placeholders}) ORDER BY FIELD(id, {placeholders})"
+                cursor.execute(sql, current_ids + current_ids)
                 algorithm_templates = cursor.fetchall()
+
                 # 动态提取语言名称
                 for template in algorithm_templates:
                     code = template['code']
@@ -540,23 +553,19 @@ def random_algorithm_templates():
                             template['language'] = 'Unknown'
 
         # 计算分页信息
+        total = len(all_ids)
         total_pages = (total + per_page - 1) // per_page
-        has_prev = False
-        has_next = False
-        prev_num = None
-        next_num = None
-        offset = 0
 
         pagination = {
-            'page': 1,
+            'page': page,
             'per_page': per_page,
             'total': total,
             'pages': total_pages,
-            'has_prev': has_prev,
-            'has_next': has_next,
-            'prev_num': prev_num,
-            'next_num': next_num,
-            'offset': offset  # 添加offset用于显示
+            'has_prev': page > 1,
+            'has_next': page < total_pages,
+            'prev_num': page - 1 if page > 1 else None,
+            'next_num': page + 1 if page < total_pages else None,
+            'offset': offset
         }
 
         # 判断是否是AJAX请求或者请求部分内容
