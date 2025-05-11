@@ -16,7 +16,7 @@ if __name__ == "__main__":
 
     """
     # 单文件处理：
-    PDF_PATH = "../../data/pdf/数据结构 C语言版 第2版 (严蔚敏).pdf"
+    PDF_PATH = "../data/pdf/数据结构 C语言版 第2版 (严蔚敏).pdf"
     if os.path.exists(PDF_PATH):
         process_and_store_pdf(PDF_PATH)
     else:
@@ -24,7 +24,7 @@ if __name__ == "__main__":
     """
 
     # 3. pdf_load
-    # PDF_DIR = "../../data/pdf"
+    # PDF_DIR = "../data/pdf"
     # pdf_files = [f for f in os.listdir(PDF_DIR) if f.endswith('.pdf')]
 
     # if not pdf_files:
