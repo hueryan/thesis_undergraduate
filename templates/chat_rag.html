@@ -1,166 +1,220 @@
 {% extends "user_base.html" %}
 
 {% block extra_head %}
-<style>
-    /* 自定义滚动条样式 */
-    .chat-messages::-webkit-scrollbar {
-        width: 8px;
-    }
-    .chat-messages::-webkit-scrollbar-track {
-        background: #f1f1f1;
-        border-radius: 4px;
-    }
-    .chat-messages::-webkit-scrollbar-thumb {
-        background: #c1c1c1;
-        border-radius: 4px;
-    }
-    .chat-messages::-webkit-scrollbar-thumb:hover {
-        background: #a8a8a8;
-    }
-</style>
+    <!-- 添加Markdown解析库 -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- 代码高亮库 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+
+    <style>
+        /* 自定义Markdown样式 */
+        .markdown-body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #24292e;
+        }
+
+        .markdown-body h1, .markdown-body h2 {
+            border-bottom: 1px solid #eaecef;
+            padding-bottom: 0.3em;
+            margin-top: 1.5em;
+        }
+
+        .markdown-body code {
+            background-color: rgba(175, 184, 193, 0.2);
+            padding: 0.2em 0.4em;
+            border-radius: 6px;
+            font-size: 85%;
+        }
+
+        .markdown-body pre {
+            background-color: #f6f8fa;
+            padding: 16px;
+            border-radius: 6px;
+            overflow: auto;
+            margin: 1em 0;
+        }
+
+        .markdown-body blockquote {
+            border-left: 4px solid #dfe2e5;
+            color: #6a737d;
+            margin: 0;
+            padding: 0 1em;
+        }
+
+        /* 自定义滚动条样式 */
+        .chat-messages::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+    </style>
+    <script>
+        // 配置marked解析器
+        marked.setOptions({
+            highlight: function (code, lang) {
+                return hljs.highlightAuto(code).value;
+            },
+            breaks: true,  // 换行符转换为<br>
+            sanitize: true  // 防止XSS攻击
+        });
+    </script>
 {% endblock %}
 
 {% block content %}
-<div class="flex flex-col h-full">
-    <!-- 聊天标题 -->
-    <div class="bg-white rounded-t-xl p-4 border-b">
-        <h2 class="text-xl font-semibold text-gray-800 flex items-center">
-            <i class="fa fa-comments mr-2 text-primary"></i>
-            知识图谱智能问答
-        </h2>
-        <p class="text-sm text-gray-500 mt-1">基于RAG技术的智能问答系统</p>
-    </div>
+    <div class="flex flex-col h-full">
+        <!-- 聊天标题 -->
+        <div class="bg-white rounded-t-xl p-4 border-b">
+            <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+                <i class="fa fa-comments mr-2 text-primary"></i>
+                知识图谱智能问答
+            </h2>
+            <p class="text-sm text-gray-500 mt-1">基于RAG技术的智能问答系统</p>
+        </div>
 
-    <!-- 聊天消息区域 -->
-    <div class="chat-messages flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50" id="chat-messages">
-        <!-- 系统欢迎消息 -->
-        <div class="flex justify-center">
-            <div class="bg-white rounded-lg p-4 shadow-sm max-w-3xl w-full text-center">
-                <p class="text-gray-600">您好！我是您的知识助手，可以问我任何关于数据结构的内容。</p>
-                <div class="mt-2 text-sm text-gray-400">
-                    <p>示例问题：</p>
-                    <ul class="list-disc list-inside space-y-1 mt-1">
-                        <li>什么是知识图谱？</li>
-                        <li>请解释节点之间的关系</li>
-                        <li>展示最新的算法模板</li>
-                    </ul>
+        <!-- 聊天消息区域 -->
+        <div class="chat-messages flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50" id="chat-messages">
+            <!-- 系统欢迎消息 -->
+            <div class="flex justify-center">
+                <div class="bg-white rounded-lg p-4 shadow-sm max-w-3xl w-full text-center">
+                    <p class="text-gray-600">您好！我是您的知识助手，可以问我任何关于数据结构的内容。</p>
+                    <div class="mt-2 text-sm text-gray-400">
+                        <p>示例问题：</p>
+                        <ul class="list-disc list-inside space-y-1 mt-1">
+                            <li>什么是知识图谱？</li>
+                            <li>请解释节点之间的关系</li>
+                            <li>展示最新的算法模板</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- 输入区域 -->
-    <div class="bg-white border-t p-4 rounded-b-xl">
-        <form id="chat-form" class="relative">
-            <div class="flex space-x-2">
-                <textarea 
-                    id="message-input"
-                    rows="2"
-                    placeholder="请输入您的问题..."
-                    class="flex-1 p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary/50"
-                    style="min-height: 50px; max-height: 150px;"
+        <!-- 输入区域 -->
+        <div class="bg-white border-t p-4 rounded-b-xl">
+            <form id="chat-form" class="relative">
+                <div class="flex space-x-2">
+                <textarea
+                        id="message-input"
+                        rows="2"
+                        placeholder="请输入您的问题..."
+                        class="flex-1 p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        style="min-height: 50px; max-height: 150px;"
                 ></textarea>
-                <button 
-                    type="submit"
-                    class="h-12 px-6 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center"
-                >
-                    <i class="fa fa-paper-plane mr-2"></i>发送
-                </button>
-            </div>
-            <div class="mt-2 text-sm text-gray-400 flex justify-between items-center">
-                <div>支持Markdown格式</div>
-                <div id="typing-indicator" class="hidden">
-                    <i class="fa fa-circle-notch fa-spin mr-1"></i>思考中...
+                    <button
+                            type="submit"
+                            class="h-12 px-6 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center"
+                    >
+                        <i class="fa fa-paper-plane mr-2"></i>发送
+                    </button>
                 </div>
-            </div>
-        </form>
+                <div class="mt-2 text-sm text-gray-400 flex justify-between items-center">
+                    <div>支持Markdown格式</div>
+                    <div id="typing-indicator" class="hidden">
+                        <i class="fa fa-circle-notch fa-spin mr-1"></i>思考中...
+                    </div>
+                </div>
+            </form>
+        </div>
     </div>
-</div>
 
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    const form = document.getElementById('chat-form');
-    const input = document.getElementById('message-input');
-    const messagesContainer = document.getElementById('chat-messages');
-    const typingIndicator = document.getElementById('typing-indicator');
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('chat-form');
+            const input = document.getElementById('message-input');
+            const messagesContainer = document.getElementById('chat-messages');
+            const typingIndicator = document.getElementById('typing-indicator');
 
-    // 自动调整输入框高度
-    input.addEventListener('input', () => {
-        input.style.height = 'auto';
-        input.style.height = input.scrollHeight + 'px';
-    });
-
-    // 处理消息发送
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const message = input.value.trim();
-        if (!message) return;
-
-        // 添加用户消息
-        addMessage(message, 'user');
-        input.value = '';
-        input.style.height = '50px';
-        
-        try {
-            // 显示加载状态
-            typingIndicator.classList.remove('hidden');
-
-            // 发送请求
-            const response = await fetch('{{ url_for("chat") }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ question: message })
+            // 自动调整输入框高度
+            input.addEventListener('input', () => {
+                input.style.height = 'auto';
+                input.style.height = input.scrollHeight + 'px';
             });
 
-            if (!response.ok) throw new Error('网络响应异常');
-            
-            const data = await response.json();
-            addMessage(data.answer, 'bot');
+            // 处理消息发送
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const message = input.value.trim();
+                if (!message) return;
 
-        } catch (error) {
-            addMessage(`回答失败: ${error.message}`, 'error');
-        } finally {
-            typingIndicator.classList.add('hidden');
-        }
-    });
+                // 添加用户消息
+                addMessage(message, 'user');
+                input.value = '';
+                input.style.height = '50px';
 
-    // 添加消息到聊天窗口
-    function addMessage(content, role) {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+                try {
+                    // 显示加载状态
+                    typingIndicator.classList.remove('hidden');
 
-        const bubble = document.createElement('div');
-        bubble.className = `max-w-3xl p-4 rounded-xl ${
-            role === 'user' 
-                ? 'bg-primary text-white' 
-                : role === 'error' 
-                    ? 'bg-red-100 text-red-700' 
-                    : 'bg-white shadow-sm'
-        }`;
-        
-        // 处理Markdown格式（简单实现）
-        const processedContent = content
-            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-            .replace(/\*(.*?)\*/g, '<em>$1</em>')
-            .replace(/```([\s\S]*?)```/g, '<pre class="bg-gray-800 text-white p-3 rounded my-2 overflow-x-auto"><code>$1</code></pre>');
+                    // 发送请求
+                    const response = await fetch('{{ url_for("chat") }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({question: message})
+                    });
 
-        bubble.innerHTML = processedContent;
-        messageDiv.appendChild(bubble);
-        messagesContainer.appendChild(messageDiv);
-        
-        // 滚动到底部
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    }
+                    if (!response.ok) throw new Error('网络响应异常');
 
-    // 回车发送（Shift+Enter换行）
-    input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            form.dispatchEvent(new Event('submit'));
-        }
-    });
-});
-</script>
+                    const data = await response.json();
+                    addMessage(data.answer, 'bot');
+
+                } catch (error) {
+                    addMessage(`回答失败: ${error.message}`, 'error');
+                } finally {
+                    typingIndicator.classList.add('hidden');
+                }
+            });
+
+            // 添加消息到聊天窗口
+            function addMessage(content, role) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+
+                const bubble = document.createElement('div');
+                bubble.className = `max-w-3xl p-4 rounded-xl ${
+                    role === 'user'
+                        ? 'bg-primary text-white'
+                        : role === 'error'
+                            ? 'bg-red-100 text-red-700'
+                            : 'bg-white shadow-sm markdown-body'  // 添加markdown-body类
+                }`;
+
+                // 使用marked解析Markdown
+                const processedContent = marked.parse(content);
+
+                bubble.innerHTML = processedContent;
+                messageDiv.appendChild(bubble);
+                messagesContainer.appendChild(messageDiv);
+
+                // 高亮代码块
+                hljs.highlightAll();
+
+                // 滚动到底部
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+
+            // 回车发送（Shift+Enter换行）
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    form.dispatchEvent(new Event('submit'));
+                }
+            });
+        });
+    </script>
 {% endblock %}

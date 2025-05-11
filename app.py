@@ -830,7 +830,10 @@ def chat():
 
     session = ChatSession()
     answer = session.generate_answer(question)
-    return jsonify({"answer": answer})
+
+    # 保留换行符并转义特殊字符
+    formatted_answer = answer.replace('\n', '  \n')  # Markdown换行语法
+    return jsonify({"answer": formatted_answer})
 
 @app.route('/main/chat-page')
 def chat_page():
