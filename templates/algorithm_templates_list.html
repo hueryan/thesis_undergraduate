@@ -53,10 +53,10 @@
                     </p>
                 </div>
 
-                {#                <!-- 代码预览区域 -->#}
-                {#                <div class="bg-gray-50 rounded-lg p-3 mt-3 mb-4 text-xs max-h-32 overflow-auto">#}
-                {#                    <pre class="text-gray-700"><code>{{ template.code|safe }}</code></pre>#}
-                {#                </div>#}
+{#                                <!-- 代码预览区域 -->#}
+{#                                <div class="bg-gray-50 rounded-lg p-3 mt-3 mb-4 text-xs max-h-32 overflow-auto">#}
+{#                                    <pre class="text-gray-700"><code>{{ template.code|safe }}</code></pre>#}
+{#                                </div>#}
 
                 <div class="flex justify-end">
                     <button class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors"
@@ -73,36 +73,43 @@
         <div class="text-sm text-gray-500">
             显示 {{ pagination.offset + 1 }} 到 {{ pagination.offset + algorithm_templates|length }}
             条，共 {{ pagination.total }} 条
-            当前页: {{ pagination.page }}
+        </div>
+        <!-- 新增：输入页码跳转 -->
+        <div class="flex items-center space-x-2">
+            第
+            <input type="number" id="page-input" placeholder="输入页码"
+                   class="p-2 border border-gray-300 rounded-md"
+                   min="1" max="{{ pagination.pages }}"
+                   value="{{ pagination.page }}">/ {{ pagination.pages }}页
         </div>
         <!-- 分页控件部分 -->
-<div class="flex space-x-2">
-    {% if is_random %}
-        <!-- 随机模式分页 -->
-        <a href="{{ url_for('random_algorithm_templates', page=pagination.prev_num, new='false') }}"
-           class="px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-           {% if not pagination.has_prev %}disabled{% endif %}>
-            <i class="fa fa-chevron-left"></i>
-        </a>
-        <a href="{{ url_for('random_algorithm_templates', page=pagination.next_num, new='false') }}"
-           class="px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-           {% if not pagination.has_next %}disabled{% endif %}>
-            <i class="fa fa-chevron-right"></i>
-        </a>
-    {% else %}
-        <!-- 普通模式分页 -->
-        <a href="{{ url_for('algorithm_templates', sort=sort, page=pagination.prev_num, search=search_query) }}"
-           class="px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-           {% if not pagination.has_prev %}disabled{% endif %}>
-            <i class="fa fa-chevron-left"></i>
-        </a>
-        <a href="{{ url_for('algorithm_templates', sort=sort, page=pagination.next_num, search=search_query) }}"
-           class="px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-           {% if not pagination.has_next %}disabled{% endif %}>
-            <i class="fa fa-chevron-right"></i>
-        </a>
-    {% endif %}
-</div>
+        <div class="flex space-x-2">
+            {% if is_random %}
+                <!-- 随机模式分页 -->
+                <a href="{{ url_for('random_algorithm_templates', page=pagination.prev_num, new='false') }}"
+                   class="px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                   {% if not pagination.has_prev %}disabled{% endif %}>
+                    <i class="fa fa-chevron-left"></i>
+                </a>
+                <a href="{{ url_for('random_algorithm_templates', page=pagination.next_num, new='false') }}"
+                   class="px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                   {% if not pagination.has_next %}disabled{% endif %}>
+                    <i class="fa fa-chevron-right"></i>
+                </a>
+            {% else %}
+                <!-- 普通模式分页 -->
+                <a href="{{ url_for('algorithm_templates', sort=sort, page=pagination.prev_num, search=search_query) }}"
+                   class="px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                   {% if not pagination.has_prev %}disabled{% endif %}>
+                    <i class="fa fa-chevron-left"></i>
+                </a>
+                <a href="{{ url_for('algorithm_templates', sort=sort, page=pagination.next_num, search=search_query) }}"
+                   class="px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                   {% if not pagination.has_next %}disabled{% endif %}>
+                    <i class="fa fa-chevron-right"></i>
+                </a>
+            {% endif %}
+        </div>
     </div>
 
     <script>
@@ -110,6 +117,13 @@
         document.getElementById('search-input').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
                 searchAlgorithms();
+            }
+        });
+
+        // 给页码输入框添加回车事件监听器
+        document.getElementById('page-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                goToPage();
             }
         });
 
@@ -171,6 +185,41 @@
 
             // 添加当前页面到查询参数中
             newUrl.searchParams.set('page', page);
+
+            history.pushState({}, '', newUrl);
+            window.location.href = newUrl.toString();
+        }
+
+        function goToPage() {
+            const pageInput = document.getElementById('page-input');
+            let page = parseInt(pageInput.value);
+            const totalPages = {{ pagination.pages }};
+
+            // 验证页码
+            if (isNaN(page) || page < 1) {
+                page = 1;
+            } else if (page > totalPages) {
+                page = totalPages;
+            }
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const sort = urlParams.get('sort') || 'desc';
+            const searchQuery = urlParams.get('search') || '';
+            const isRandom = window.location.pathname.includes('/random');
+
+            // 创建新的URL对象
+            let newUrl;
+            if (isRandom) {
+                newUrl = new URL('/main/algorithm-templates/random', window.location.origin);
+            } else {
+                newUrl = new URL('/main/algorithm-templates', window.location.origin);
+            }
+
+            newUrl.searchParams.set('sort', sort);
+            newUrl.searchParams.set('page', page);
+            if (searchQuery) {
+                newUrl.searchParams.set('search', searchQuery);
+            }
 
             history.pushState({}, '', newUrl);
             window.location.href = newUrl.toString();
