@@ -574,13 +574,15 @@ def random_algorithm_templates():
             return render_template('algorithm_templates_list.html',
                                    algorithm_templates=algorithm_templates,
                                    pagination=pagination,
-                                   sort=None)
+                                   sort=None,
+                                   is_random=True)  # 添加is_random参数
         else:
             # 返回完整页面
             return render_template('main.html',
                                    algorithm_templates=algorithm_templates,
                                    pagination=pagination,
-                                   sort=None)
+                                   sort=None,
+                                   is_random=True)
 
     except Exception as e:
         flash(f'获取随机算法模板数据失败: {str(e)}', 'error')

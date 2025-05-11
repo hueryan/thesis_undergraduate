@@ -5,9 +5,11 @@
             <!-- 搜索框 -->
             <input type="text" id="search-input" placeholder="搜索算法名称"
                    class="p-2 border border-gray-300 rounded-md"
-                   value="{{ search_query if search_query }}">
+                   value="{{ search_query if search_query }}"
+                    {% if is_random %} disabled {% endif %}>
             <button type="button" onclick="searchAlgorithms()"
-                    class="p-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition relative" title="搜索">
+                    class="p-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition relative" title="搜索"
+                    {% if is_random %} disabled {% endif %}>
                 <i class="fa fa-search"></i>
             </button>
             <button type="button"
@@ -74,20 +76,40 @@
             当前页: {{ pagination.page }}
         </div>
         <div class="flex space-x-2">
-            <a href="{{ url_for('random_algorithm_templates', page=pagination.prev_num, new='false') }}"
-               class="px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-               {% if not pagination.has_prev %}disabled{% endif %}>
-                <i class="fa fa-chevron-left"></i>
-            </a>
-            <a href="{{ url_for('random_algorithm_templates', page=pagination.next_num, new='false') }}"
-               class="px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-               {% if not pagination.has_next %}disabled{% endif %}>
-                <i class="fa fa-chevron-right"></i>
-            </a>
+            {% if is_random %}
+                <a href="{{ url_for('random_algorithm_templates', page=pagination.prev_num, new='false') }}"
+                   class="px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                   {% if not pagination.has_prev %}disabled{% endif %}>
+                    <i class="fa fa-chevron-left"></i>
+                </a>
+                <a href="{{ url_for('random_algorithm_templates', page=pagination.next_num, new='false') }}"
+                   class="px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                   {% if not pagination.has_next %}disabled{% endif %}>
+                    <i class="fa fa-chevron-right"></i>
+                </a>
+            {% else %}
+                <a href="{{ url_for('algorithm_templates', sort=sort, page=pagination.prev_num, search=search_query) }}"
+                   class="px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                   {% if not pagination.has_prev %}disabled{% endif %}>
+                    <i class="fa fa-chevron-left"></i>
+                </a>
+                <a href="{{ url_for('algorithm_templates', sort=sort, page=pagination.next_num, search=search_query) }}"
+                   class="px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                   {% if not pagination.has_next %}disabled{% endif %}>
+                    <i class="fa fa-chevron-right"></i>
+                </a>
+            {% endif %}
         </div>
     </div>
 
     <script>
+        // 添加回车事件
+        document.getElementById('search-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                searchAlgorithms();
+            }
+        });
+
         function searchAlgorithms() {
             const searchTerm = document.getElementById('search-input').value.trim();
             const urlParams = new URLSearchParams(window.location.search);
