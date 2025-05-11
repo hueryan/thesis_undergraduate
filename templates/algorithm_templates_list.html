@@ -13,19 +13,19 @@
                 <i class="fa fa-search"></i>
             </button>
             <button type="button"
-                    onclick="window.location.href='{{ url_for('random_algorithm_templates', new='true') }}'"
+                    onclick="randomShow()"
                     class="p-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition relative"
                     title="随机展示">
                 <i class="fa fa-random"></i>
             </button>
             <button type="button"
-                    onclick="window.location.href='{{ url_for('algorithm_templates', sort='asc', page=1, search=search_query if search_query) }}'"
+                    onclick="changeSort('asc')"
                     class="p-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition relative"
                     title="按 ID 正序排序">
                 <i class="fa fa-arrow-up"></i>
             </button>
             <button type="button"
-                    onclick="window.location.href='{{ url_for('algorithm_templates', sort='desc', page=1, search=search_query if search_query) }}'"
+                    onclick="changeSort('desc')"
                     class="p-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition relative"
                     title="按 ID 逆序排序">
                 <i class="fa fa-arrow-down"></i>
@@ -75,31 +75,34 @@
             条，共 {{ pagination.total }} 条
             当前页: {{ pagination.page }}
         </div>
-        <div class="flex space-x-2">
-            {% if is_random %}
-                <a href="{{ url_for('random_algorithm_templates', page=pagination.prev_num, new='false') }}"
-                   class="px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                   {% if not pagination.has_prev %}disabled{% endif %}>
-                    <i class="fa fa-chevron-left"></i>
-                </a>
-                <a href="{{ url_for('random_algorithm_templates', page=pagination.next_num, new='false') }}"
-                   class="px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                   {% if not pagination.has_next %}disabled{% endif %}>
-                    <i class="fa fa-chevron-right"></i>
-                </a>
-            {% else %}
-                <a href="{{ url_for('algorithm_templates', sort=sort, page=pagination.prev_num, search=search_query) }}"
-                   class="px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                   {% if not pagination.has_prev %}disabled{% endif %}>
-                    <i class="fa fa-chevron-left"></i>
-                </a>
-                <a href="{{ url_for('algorithm_templates', sort=sort, page=pagination.next_num, search=search_query) }}"
-                   class="px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                   {% if not pagination.has_next %}disabled{% endif %}>
-                    <i class="fa fa-chevron-right"></i>
-                </a>
-            {% endif %}
-        </div>
+        <!-- 分页控件部分 -->
+<div class="flex space-x-2">
+    {% if is_random %}
+        <!-- 随机模式分页 -->
+        <a href="{{ url_for('random_algorithm_templates', page=pagination.prev_num, new='false') }}"
+           class="px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+           {% if not pagination.has_prev %}disabled{% endif %}>
+            <i class="fa fa-chevron-left"></i>
+        </a>
+        <a href="{{ url_for('random_algorithm_templates', page=pagination.next_num, new='false') }}"
+           class="px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+           {% if not pagination.has_next %}disabled{% endif %}>
+            <i class="fa fa-chevron-right"></i>
+        </a>
+    {% else %}
+        <!-- 普通模式分页 -->
+        <a href="{{ url_for('algorithm_templates', sort=sort, page=pagination.prev_num, search=search_query) }}"
+           class="px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+           {% if not pagination.has_prev %}disabled{% endif %}>
+            <i class="fa fa-chevron-left"></i>
+        </a>
+        <a href="{{ url_for('algorithm_templates', sort=sort, page=pagination.next_num, search=search_query) }}"
+           class="px-3 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+           {% if not pagination.has_next %}disabled{% endif %}>
+            <i class="fa fa-chevron-right"></i>
+        </a>
+    {% endif %}
+</div>
     </div>
 
     <script>
@@ -131,6 +134,46 @@
 
         function viewAlgorithm(templateId) {
             window.location.href = `/main/algorithm-templates/${templateId}`;
+        }
+
+        function changeSort(sort) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const page = urlParams.get('page') || 1;
+            const searchQuery = urlParams.get('search') || '';
+
+            // 创建新的URL对象，跳转到正常的算法模板列表页面
+            const newUrl = new URL('/main/algorithm-templates', window.location.origin);
+
+            newUrl.searchParams.set('sort', sort);
+            newUrl.searchParams.set('page', page);
+            if (searchQuery) {
+                newUrl.searchParams.set('search', searchQuery);
+            } else {
+                newUrl.searchParams.delete('search');
+            }
+
+            history.pushState({}, '', newUrl);
+            window.location.href = newUrl.toString();
+        }
+
+        function randomShow() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const page = urlParams.get('page') || 1;
+            
+            // 创建新的URL对象
+            const newUrl = new URL('/main/algorithm-templates/random', window.location.origin);
+
+            // 删除可能存在的 sort 参数，确保使用随机排序
+            newUrl.searchParams.delete('sort');
+
+            // 添加 new=true 参数，确保每次点击都获取新的随机结果
+            newUrl.searchParams.set('new', 'true');
+
+            // 添加当前页面到查询参数中
+            newUrl.searchParams.set('page', page);
+
+            history.pushState({}, '', newUrl);
+            window.location.href = newUrl.toString();
         }
     </script>
 {% endblock %}
