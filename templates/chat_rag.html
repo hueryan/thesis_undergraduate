@@ -8,6 +8,61 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
 
     <style>
+
+        @keyframes dot-flashing {
+            0% {
+                opacity: 0.2;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0.2;
+            }
+        }
+
+        .dot-flashing {
+            position: relative;
+            width: 10px;
+            height: 10px;
+            border-radius: 5px;
+            background-color: #6366F1;
+            animation: dot-flashing 1s infinite linear;
+        }
+
+        .dot-flashing::before,
+        .dot-flashing::after {
+            content: '';
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 5px;
+            background-color: #6366F1;
+        }
+
+        .dot-flashing::before {
+            left: -15px;
+            animation: dot-flashing 1s infinite linear;
+            animation-delay: 0.2s;
+        }
+
+        .dot-flashing::after {
+            left: 15px;
+            animation: dot-flashing 1s infinite linear;
+            animation-delay: 0.4s;
+        }
+
+        /* 加载状态容器样式 */
+        .typing-indicator {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
         /* 自定义Markdown样式 */
         .markdown-body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
@@ -133,88 +188,114 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const form = document.getElementById('chat-form');
-            const input = document.getElementById('message-input');
-            const messagesContainer = document.getElementById('chat-messages');
-            const typingIndicator = document.getElementById('typing-indicator');
+                const form = document.getElementById('chat-form');
+                const input = document.getElementById('message-input');
+                const messagesContainer = document.getElementById('chat-messages');
+                const typingIndicator = document.getElementById('typing-indicator');
 
-            // 自动调整输入框高度
-            input.addEventListener('input', () => {
-                input.style.height = 'auto';
-                input.style.height = input.scrollHeight + 'px';
-            });
+                // 自动调整输入框高度
+                input.addEventListener('input', () => {
+                    input.style.height = 'auto';
+                    input.style.height = input.scrollHeight + 'px';
+                });
 
-            // 处理消息发送
-            form.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const message = input.value.trim();
-                if (!message) return;
+                // 处理消息发送
+                form.addEventListener('submit', async (e) => {
+                        e.preventDefault();
+                        const message = input.value.trim();
+                        if (!message) return;
 
-                // 添加用户消息
-                addMessage(message, 'user');
-                input.value = '';
-                input.style.height = '50px';
+                        // 添加用户消息
+                        addMessage(message, 'user');
+                        input.value = '';
+                        input.style.height = '50px';
 
-                try {
-                    // 显示加载状态
-                    typingIndicator.classList.remove('hidden');
 
-                    // 发送请求
-                    const response = await fetch('{{ url_for("chat") }}', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({question: message})
-                    });
+                        const typingIndicator = addTypingIndicator(); // 111111
 
-                    if (!response.ok) throw new Error('网络响应异常');
 
-                    const data = await response.json();
-                    addMessage(data.answer, 'bot');
+                        try {
+                            // 发送请求
+                            const response = await fetch('{{ url_for("chat") }}', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({question: message})
+                            });
 
-                } catch (error) {
-                    addMessage(`回答失败: ${error.message}`, 'error');
-                } finally {
-                    typingIndicator.classList.add('hidden');
+                            // 移除加载状态
+                            typingIndicator.remove();
+
+                            if (!response.ok) throw new Error('网络响应异常');
+
+                            const data = await response.json();
+                            addMessage(data.answer, 'bot');
+
+                        } catch (error) {
+                            // 确保异常时也移除加载状态
+                            if (typingIndicator) typingIndicator.remove();
+                            addMessage(`回答失败: ${error.message}`, 'error');
+                        } finally {
+                            typingIndicator.classList.add('hidden');
+                        }
+                    }
+                )
+
+
+                // 新增加载状态函数
+                function addTypingIndicator() {
+                    const typingDiv = document.createElement('div');
+                    typingDiv.className = 'flex justify-start mb-4';
+                    typingDiv.innerHTML = `
+                        <div class="typing-indicator">
+                            <div class="dot-flashing"></div>
+                            <span class="text-gray-600 text-sm">正在思考中...</span>
+                        </div>`;
+                    messagesContainer.appendChild(typingDiv);
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                    return typingDiv;
                 }
-            });
 
-            // 添加消息到聊天窗口
-            function addMessage(content, role) {
-                const messageDiv = document.createElement('div');
-                messageDiv.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+                // 添加消息到聊天窗口
+                function addMessage(content, role) {
+                    const messageDiv = document.createElement('div');
+                    messageDiv.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
 
-                const bubble = document.createElement('div');
-                bubble.className = `max-w-3xl p-4 rounded-xl ${
-                    role === 'user'
-                        ? 'bg-primary text-white'
-                        : role === 'error'
-                            ? 'bg-red-100 text-red-700'
-                            : 'bg-white shadow-sm markdown-body'  // 添加markdown-body类
-                }`;
+                    const bubble = document.createElement('div');
+                    bubble.className = `max-w-3xl p-4 rounded-xl ${
+                        role === 'user'
+                            ? 'bg-primary text-white'
+                            : role === 'error'
+                                ? 'bg-red-100 text-red-700'
+                                : 'bg-white shadow-sm markdown-body'  // 添加markdown-body类
+                    }`;
 
-                // 使用marked解析Markdown
-                const processedContent = marked.parse(content);
 
-                bubble.innerHTML = processedContent;
-                messageDiv.appendChild(bubble);
-                messagesContainer.appendChild(messageDiv);
+                    // 使用marked解析Markdown
+                    const processedContent = marked.parse(content);
 
-                // 高亮代码块
-                hljs.highlightAll();
+                    bubble.innerHTML = processedContent;
+                    messageDiv.appendChild(bubble);
+                    messagesContainer.appendChild(messageDiv);
 
-                // 滚动到底部
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                    // 高亮代码块
+                    hljs.highlightAll();
+
+
+                    // 滚动到底部
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                }
+
+                // 回车发送（Shift+Enter换行）
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        form.dispatchEvent(new Event('submit'));
+                    }
+                });
             }
+        )
 
-            // 回车发送（Shift+Enter换行）
-            input.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    form.dispatchEvent(new Event('submit'));
-                }
-            });
-        });
     </script>
 {% endblock %}
