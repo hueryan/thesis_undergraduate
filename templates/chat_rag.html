@@ -53,6 +53,18 @@
             }
         }
 
+        .lang-tag {
+            font-family: 'Fira Code', monospace;
+            padding: 2px 6px;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 4px;
+            margin-left: 8px;
+        }
+
+        .copy-button:hover .lang-tag {
+            background: rgba(0, 0, 0, 0.08);
+        }
+
         .dot-flashing {
             position: relative;
             width: 10px;
@@ -329,12 +341,22 @@
                         const existingButton = preElement.querySelector('.copy-button');
                         if (existingButton) existingButton.remove();
 
+                        // 获取语言类型
+                        const codeElement = preElement.querySelector('code');
+                        const language = Array.from(codeElement.classList)
+                                .find(c => c.startsWith('language-'))
+                                ?.replace('language-', '')
+                            || 'text';
+
                         // 创建新按钮
                         const button = document.createElement('button');
                         button.className = 'copy-button';
                         button.innerHTML = `
-                        <i class="fa fa-copy text-gray-600 text-sm"></i>
-                        <span class="text-xs text-gray-600">复制</span>
+                            <div class="flex items-center gap-2">
+                                <i class="fa fa-copy text-gray-600 text-sm"></i>
+                                <span class="text-xs text-gray-600">复制</span>
+                                <span class="lang-tag text-xs text-gray-400">${language}</span>
+                            </div>
                     `;
 
                         // 点击事件处理
