@@ -1,0 +1,14 @@
+chardet==5.2.0
+Flask==3.1.0
+langchain==0.3.25
+langchain_community==0.3.23
+langchain_openai==0.3.16
+neo4j==5.28.1
+openai==1.78.0
+pymilvus==2.5.8
+PyMySQL==1.1.1
+python-dotenv==1.1.0
+
+pytorch==2.0.1
+torchvision==0.15.2
+
