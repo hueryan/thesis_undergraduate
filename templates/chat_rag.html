@@ -8,6 +8,38 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
 
     <style>
+        /* 复制按钮样式 */
+        .copy-button {
+            position: absolute;
+            top: 12px; /* 增加上边距 */
+            right: 12px; /* 增加右边距 */
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            padding: 6px 10px; /* 增加内边距 */
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid #e5e7eb;
+            border-radius: 6px; /* 圆角增大 */
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px; /* 增加图标和文字间距 */
+            z-index: 10; /* 确保按钮在代码块上方 */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* 添加轻微阴影 */
+        }
+
+        .copy-button:hover {
+            background: #ffffff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* 悬停阴影增强 */
+        }
+
+        pre {
+            position: relative !important; /* 确保相对定位 */
+            margin-top: 8px !important; /* 为按钮留出空间 */
+        }
+
+        pre:hover .copy-button {
+            opacity: 1;
+        }
 
         @keyframes dot-flashing {
             0% {
@@ -279,6 +311,9 @@
                     messageDiv.appendChild(bubble);
                     messagesContainer.appendChild(messageDiv);
 
+                    // 添加复制按钮到所有代码块
+                    addCopyButtons(bubble);
+
                     // 高亮代码块
                     hljs.highlightAll();
 
@@ -286,6 +321,45 @@
                     // 滚动到底部
                     messagesContainer.scrollTop = messagesContainer.scrollHeight;
                 }
+
+                // 复制按钮功能
+                function addCopyButtons(container) {
+                    container.querySelectorAll('pre').forEach(preElement => {
+                        // 删除旧按钮（防止重复）
+                        const existingButton = preElement.querySelector('.copy-button');
+                        if (existingButton) existingButton.remove();
+
+                        // 创建新按钮
+                        const button = document.createElement('button');
+                        button.className = 'copy-button';
+                        button.innerHTML = `
+                        <i class="fa fa-copy text-gray-600 text-sm"></i>
+                        <span class="text-xs text-gray-600">复制</span>
+                    `;
+
+                        // 点击事件处理
+                        button.onclick = (e) => {
+                            e.stopPropagation();
+                            const code = preElement.querySelector('code').innerText;
+                            navigator.clipboard.writeText(code).then(() => {
+                                button.innerHTML = `
+                                <i class="fa fa-check text-green-500 text-sm"></i>
+                                <span class="text-xs text-green-500">已复制</span>
+                            `;
+                                setTimeout(() => {
+                                    button.innerHTML = `
+                                    <i class="fa fa-copy text-gray-600 text-sm"></i>
+                                    <span class="text-xs text-gray-600">复制</span>
+                                `;
+                                }, 2000);
+                            });
+                        };
+
+                        preElement.style.position = 'relative';
+                        preElement.prepend(button);  // 使用prepend确保按钮在最上层
+                    });
+                }
+
 
                 // 回车发送（Shift+Enter换行）
                 input.addEventListener('keydown', (e) => {
