@@ -1,6 +1,18 @@
+import sys
+import os
+
+# 获取当前脚本所在目录
+current_dir = os.path.dirname(os.path.abspath(__file__))
+# 构建 milvus_manager.py等 所在目录的路径
+pdf_knowledge_chat_dir = os.path.join(current_dir, 'pdf_knowledge_chat')
+# 将该目录添加到 Python 路径中
+sys.path.append(pdf_knowledge_chat_dir)
+
+
 from configs.database_config import MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PW, MYSQL_DB, MYSQL_USER_TABLE, MYSQL_INVITATION_CODES_TABLE, MYSQL_ALGORITHM_TEMPLATES_TABLE
 from data_structure_kg_workspace.config_neo4j import NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
+from pdf_knowledge_chat.chat_session import ChatSession
 from dotenv import load_dotenv
 from datetime import datetime
 from neo4j import GraphDatabase
@@ -809,6 +821,25 @@ def admin_edit_algorithm_template(template_id):
 
     return render_template('admin/algorithm_template_edit.html', template=template)
 
+@app.route('/main/chat', methods=['POST'])
+def chat():
+    data = request.get_json()
+    question = data.get('question')
+    if not question:
+        return jsonify({"error": "Missing question"}), 400
+
+    session = ChatSession()
+    answer = session.generate_answer(question)
+    return jsonify({"answer": answer})
+
+@app.route('/main/chat-page')
+def chat_page():
+    if not is_user_logged_in():
+        flash('请先登录')
+        return redirect(url_for('login'))
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return render_template('chat_rag_content.html')  # 创建内容片段模板
+    return render_template('chat_rag.html')
 
 if __name__ == '__main__':
     app.run(debug=True)

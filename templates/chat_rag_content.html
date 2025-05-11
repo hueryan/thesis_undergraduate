@@ -1,0 +1,10 @@
+{% extends "chat_rag.html" %}
+
+{# 清空多余的模板继承 #}
+{% block extra_head %}{% endblock %}
+{% block title %}{% endblock %}
+
+{% block content %}
+    {# 只保留聊天内容 #}
+    {{ super() }}
+{% endblock %}

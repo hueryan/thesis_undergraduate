@@ -1,0 +1,166 @@
+{% extends "user_base.html" %}
+
+{% block extra_head %}
+<style>
+    /* 自定义滚动条样式 */
+    .chat-messages::-webkit-scrollbar {
+        width: 8px;
+    }
+    .chat-messages::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+    .chat-messages::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 4px;
+    }
+    .chat-messages::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="flex flex-col h-full">
+    <!-- 聊天标题 -->
+    <div class="bg-white rounded-t-xl p-4 border-b">
+        <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+            <i class="fa fa-comments mr-2 text-primary"></i>
+            知识图谱智能问答
+        </h2>
+        <p class="text-sm text-gray-500 mt-1">基于RAG技术的智能问答系统</p>
+    </div>
+
+    <!-- 聊天消息区域 -->
+    <div class="chat-messages flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50" id="chat-messages">
+        <!-- 系统欢迎消息 -->
+        <div class="flex justify-center">
+            <div class="bg-white rounded-lg p-4 shadow-sm max-w-3xl w-full text-center">
+                <p class="text-gray-600">您好！我是您的知识助手，可以问我任何关于数据结构的内容。</p>
+                <div class="mt-2 text-sm text-gray-400">
+                    <p>示例问题：</p>
+                    <ul class="list-disc list-inside space-y-1 mt-1">
+                        <li>什么是知识图谱？</li>
+                        <li>请解释节点之间的关系</li>
+                        <li>展示最新的算法模板</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 输入区域 -->
+    <div class="bg-white border-t p-4 rounded-b-xl">
+        <form id="chat-form" class="relative">
+            <div class="flex space-x-2">
+                <textarea 
+                    id="message-input"
+                    rows="2"
+                    placeholder="请输入您的问题..."
+                    class="flex-1 p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    style="min-height: 50px; max-height: 150px;"
+                ></textarea>
+                <button 
+                    type="submit"
+                    class="h-12 px-6 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center"
+                >
+                    <i class="fa fa-paper-plane mr-2"></i>发送
+                </button>
+            </div>
+            <div class="mt-2 text-sm text-gray-400 flex justify-between items-center">
+                <div>支持Markdown格式</div>
+                <div id="typing-indicator" class="hidden">
+                    <i class="fa fa-circle-notch fa-spin mr-1"></i>思考中...
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('chat-form');
+    const input = document.getElementById('message-input');
+    const messagesContainer = document.getElementById('chat-messages');
+    const typingIndicator = document.getElementById('typing-indicator');
+
+    // 自动调整输入框高度
+    input.addEventListener('input', () => {
+        input.style.height = 'auto';
+        input.style.height = input.scrollHeight + 'px';
+    });
+
+    // 处理消息发送
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const message = input.value.trim();
+        if (!message) return;
+
+        // 添加用户消息
+        addMessage(message, 'user');
+        input.value = '';
+        input.style.height = '50px';
+        
+        try {
+            // 显示加载状态
+            typingIndicator.classList.remove('hidden');
+
+            // 发送请求
+            const response = await fetch('{{ url_for("chat") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ question: message })
+            });
+
+            if (!response.ok) throw new Error('网络响应异常');
+            
+            const data = await response.json();
+            addMessage(data.answer, 'bot');
+
+        } catch (error) {
+            addMessage(`回答失败: ${error.message}`, 'error');
+        } finally {
+            typingIndicator.classList.add('hidden');
+        }
+    });
+
+    // 添加消息到聊天窗口
+    function addMessage(content, role) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+
+        const bubble = document.createElement('div');
+        bubble.className = `max-w-3xl p-4 rounded-xl ${
+            role === 'user' 
+                ? 'bg-primary text-white' 
+                : role === 'error' 
+                    ? 'bg-red-100 text-red-700' 
+                    : 'bg-white shadow-sm'
+        }`;
+        
+        // 处理Markdown格式（简单实现）
+        const processedContent = content
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/```([\s\S]*?)```/g, '<pre class="bg-gray-800 text-white p-3 rounded my-2 overflow-x-auto"><code>$1</code></pre>');
+
+        bubble.innerHTML = processedContent;
+        messageDiv.appendChild(bubble);
+        messagesContainer.appendChild(messageDiv);
+        
+        // 滚动到底部
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    // 回车发送（Shift+Enter换行）
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            form.dispatchEvent(new Event('submit'));
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -4,34 +4,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>管理员面板 - 数据结构学习系统</title>
+    <title>{% block title %}知识图谱平台{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
 
-    <!-- 配置Tailwind主题 -->
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        primary: '#6366f1',
-                        secondary: '#8b5cf6',
-                        dark: '#1e293b',
-                        light: '#f8fafc',
-                        admin: '#10b981', // 绿色系作为管理员主题色
-                        success: '#10b981',
-                        danger: '#ef4444',
-                        warning: '#f59e0b',
-                        info: '#3b82f6',
+                        primary: '#6366F1',
+                        admin: '#10b981',
                     },
-                    fontFamily: {
-                        inter: ['Inter', 'system-ui', 'sans-serif'],
-                    },
-                    boxShadow: {
-                        'card': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-                        'card-hover': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-                    }
-                }
+                },
             }
         }
     </script>
@@ -42,56 +27,82 @@
                 content-visibility: auto;
             }
 
-            .card-shadow {
-                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+            .nav-shadow {
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             }
 
-            .input-focus {
-                @apply focus:ring-2 focus:ring-primary/50 focus:border-primary transition duration-200;
+            .min-h-screen-without-header {
+                min-height: calc(100vh - 30rem);
             }
 
-            .sidebar-link {
-                @apply flex items-center p-3 rounded-lg text-gray-700 hover:bg-primary/10 hover:text-primary transition-all duration-200;
+            .gradient-text {
+                background-clip: text;
+                -webkit-background-clip: text;
+                text-fill-color: transparent;
+                -webkit-text-fill-color: transparent;
             }
 
-            .sidebar-link.active {
-                @apply bg-primary/10 text-primary font-medium;
+            .sidebar-collapsed {
+                width: 0;
+                padding: 0;
+                overflow: hidden;
             }
 
-            .btn-primary {
-                @apply px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition transform hover:-translate-y-0.5 hover:shadow-lg;
+            .main-expanded {
+                margin-left: 0;
             }
 
-            .btn-secondary {
-                @apply px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition transform hover:-translate-y-0.5 hover:shadow-lg;
+            .resizer {
+                position: absolute;
+                top: 0;
+                right: 0;
+                width: 5px;
+                height: 100%;
+                cursor: col-resize;
+                background-color: #ccc;
             }
 
-            .btn-danger {
-                @apply px-4 py-2 bg-danger text-white rounded-lg hover:bg-danger/90 transition transform hover:-translate-y-0.5 hover:shadow-lg;
+            .doubao-icon {
+                display: inline-block;
+                width: 24px;
+                height: 24px;
+                background-color: #6366F1;
+                border-radius: 6px;
+                position: relative;
             }
 
-            .btn-success {
-                @apply px-4 py-2 bg-success text-white rounded-lg hover:bg-success/90 transition transform hover:-translate-y-0.5 hover:shadow-lg;
+            .doubao-icon::before {
+                content: '';
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 14px;
+                height: 14px;
+                background-color: white;
+                border-radius: 3px;
             }
 
-            .form-input {
-                @apply w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition duration-200;
+            .doubao-icon::after {
+                content: '';
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -40%);
+                width: 8px;
+                height: 8px;
+                background-color: #6366F1;
+                border-radius: 2px;
             }
-        }
-
-        #separator {
-            width: 5px;
-            background-color: #ccc;
-            cursor: col-resize;
         }
     </style>
+    {% block extra_head %}{% endblock %}
 </head>
 
 <body class="font-inter bg-gray-50 text-gray-800 min-h-screen flex flex-col">
 <!-- 顶部导航栏 -->
 <header class="bg-white nav-shadow sticky top-0 z-50">
     <div class="container mx-auto px-0 py-3 flex justify-between items-center">
-        <!-- 新增：收缩/展开导航栏按钮 -->
         <button id="sidebar-toggle" class="ml-2 text-gray-500 hover:text-gray-700 focus:outline-none"
                 title="收缩/展开导航栏">
             <i class="fa fa-bars"></i>
@@ -120,7 +131,6 @@
                 <a href="{{ url_for('logout') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                     <i class="fa fa-sign-out mr-2"></i>退出登录
                 </a>
-                <!-- 添加算法模板管理菜单项 -->
                 {% if session.get('role') == -1 %}
                     <a href="{{ url_for('admin_index') }}"
                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
@@ -132,8 +142,12 @@
     </div>
 </header>
 
+<div id="welcome-message"
+     class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-lg shadow-lg bg-green-500 text-white opacity-0 transition-opacity duration-500"
+     style="display: none;"></div>
+
 <!-- 主内容区域 -->
-<div class="flex min-h-screen">
+<div class="flex min-h-screen-without-header">
     <!-- 左侧导航栏 -->
     <aside id="sidebar" class="w-64 bg-white shadow-md p-6 h-screen sticky top-0 overflow-y-auto relative">
         <h2 class="text-lg font-bold text-gray-800 mb-4">导航菜单</h2>
@@ -152,106 +166,286 @@
                     <span>算法模板</span>
                 </a>
             </li>
-            <!-- 移除管理员算法模板管理菜单项 -->
-            <!-- {% if session.get('role') == -1 %}
-                    <li>
-                        <a href="{{ url_for('admin_algorithm_templates') }}"
-                           class="flex items-center p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
-                            <i class="fa fa-cog mr-2"></i>
-                            <span>算法模板管理</span>
-                        </a>
-                    </li>
-                {% endif %} -->
+            <li>
+                <a href="{{ url_for('chat_page') }}" id="chat-nav"
+                   class="flex items-center p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors gradient-text">
+                    <i class="fa fa-comments mr-2"></i>
+                    <span>Chat</span>
+                </a>
+            </li>
         </ul>
-        <!-- 新增：拖拽条 -->
         <div class="resizer" id="resizer"></div>
     </aside>
 
-
-    <!-- 分隔条 -->
-    <div id="separator"></div>
-    <!-- 右侧内容区 -->
-    <main id="main-content" class="flex-1 p-6 overflow-y-auto transition-all duration-300">
-        <div class="max-w-7xl mx-auto">
-            <!-- 页面标题 -->
-            <div class="mb-8">
-                <h1 class="text-3xl font-bold text-gray-800 mb-2">{{ page_title }}</h1>
-                <p class="text-gray-600">{{ page_description }}</p>
-            </div>
-
-            <!-- 内容区域 -->
-            <div class="bg-white rounded-xl shadow-card p-6 mb-6">
-                {% block content %}{% endblock %}
-            </div>
+    <!-- 主内容块 -->
+    <main id="main-content" class="flex-1 p-6 overflow-y-auto">
+        <div class="bg-white rounded-xl shadow-md p-6 h-full" id="content-area">
+            {% block content %}
+                <!-- 默认内容 -->
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">知识图谱节点展示</h2>
+                <p class="text-gray-600">点击左侧导航栏的"知识图谱"查看内容</p>
+            {% endblock %}
         </div>
     </main>
 </div>
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // 为卡片添加悬停效果
-        const cards = document.querySelectorAll('.card-hover');
-        cards.forEach(card => {
-            card.addEventListener('mouseenter', function () {
-                this.classList.add('shadow-card-hover', '-translate-y-1');
-            });
-            card.addEventListener('mouseleave', function () {
-                this.classList.remove('shadow-card-hover', '-translate-y-1');
-            });
-        });
+        // 处理左侧导航栏点击
+        const navLinks = document.querySelectorAll('aside ul li a');
 
-        // 平滑滚动
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
+        navLinks.forEach(link => {
+            link.addEventListener('click', function (e) {
+                // 允许管理员链接正常跳转
+                if (this.getAttribute('href').startsWith('/admin/')) {
+                    return;
+                }
                 e.preventDefault();
-                document.querySelector(this.getAttribute('href')).scrollIntoView({
-                    behavior: 'smooth'
+
+                // 获取目标页面和页码
+                const target = this.textContent.trim();
+                const href = this.getAttribute('href');
+                const url = new URL(href, window.location.origin);
+                const page = url.searchParams.get('page') || 1;
+
+                // 加载内容
+                loadContent(target, page);
+
+                // 更新URL
+                history.pushState(null, null, href);
+
+                // 更新导航高亮
+                navLinks.forEach(item => {
+                    item.classList.remove('bg-primary/10', 'text-primary');
+                    item.classList.add('text-gray-600');
                 });
+                this.classList.remove('text-gray-600');
+                this.classList.add('bg-primary/10', 'text-primary');
             });
         });
 
-        // 处理侧边栏收缩
+        // 加载内容的函数 - 更新以传递页码和排序参数
+        function loadContent(target, page = 1, sort = 'desc', search = '') {
+            const contentArea = document.querySelector('#content-area');
+
+            // 构建URL参数
+            const params = new URLSearchParams();
+            if (page > 1) params.set('page', page);
+            if (sort !== 'desc') params.set('sort', sort);
+            if (search) params.set('search', search);
+
+            let url;
+            if (target === '知识图谱') {
+                {#url = `/main/knowledge-graph?${params.toString()}`;#}
+                url = `/main/knowledge-graph`;
+            } else if (target === 'Chat') {
+                window.location.href = '/main/chat-page';
+            } else if (target === '算法模板' && window.location.pathname.endsWith('/random')) {
+                const currenUrl = new URL(window.location.page);
+                console.log(currenUrl);
+                url = currenUrl.toString();
+            } else {
+                url = `/main/algorithm-templates?${params.toString()}`;
+            }
+
+            fetch(url, {
+                headers: {'X-Requested-With': 'XMLHttpRequest'}
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("网络相应不正常");
+                    }
+                    return response.text();
+                })
+                .then(html => {
+                    contentArea.innerHTML = html;
+                    // 执行动态加载的脚本
+                    contentArea.querySelectorAll('script').forEach(oldScript => {
+                        const newScript = document.createElement('script');
+                        newScript.textContent = oldScript.textContent;
+                        document.body.appendChild(newScript).remove();
+                    });
+                    history.replaceState(null, null, url); // 更准确的URL更新
+                })
+                .catch(error => {
+                    console.error(`加载失败:`, error);
+                    contentArea.innerHTML = `
+            <div class="text-red-500 p-4">
+                加载失败: ${error.message}
+            </div>
+        `;
+                });
+        }
+
+
+        // 处理分页按钮的事件
+        document.addEventListener('click', function (e) {
+            if (e.target.closest('a[href^="?page="]')) {
+                e.preventDefault();
+                const href = e.target.closest('a').getAttribute('href');
+                const urlParams = new URLSearchParams(href.split('?')[1] || '');
+
+                const page = urlParams.get('page');
+                const sort = urlParams.get('sort') || 'desc';
+                const search = urlParams.get('search') || '';
+
+                const activeNavItem = document.querySelector('aside ul li a.bg-primary/10');
+                const target = activeNavItem?.textContent.trim();
+
+                if (target) {
+                    loadContent(target, page, sort, search);
+                }
+            }
+        });
+
+        // 处理浏览器前进/后退按钮
+        window.addEventListener('popstate', function () {
+            const path = window.location.pathname;
+            const params = new URLSearchParams(window.location.search);
+            const page = params.get('page') || 1;
+
+            if (path.endsWith('/knowledge-graph')) {
+                loadContent('知识图谱', page);
+                // 更新导航高亮
+                navLinks.forEach(item => {
+                    item.classList.remove('bg-primary/10', 'text-primary');
+                    item.classList.add('text-gray-600');
+                });
+                document.querySelector('aside ul li a:contains("知识图谱")').classList.remove('text-gray-600');
+                document.querySelector('aside ul li a:contains("知识图谱")').classList.add('bg-primary/10', 'text-primary');
+            } else if (path.endsWith('/algorithm-templates')) {
+                loadContent('算法模板', page);
+                // 更新导航高亮
+                navLinks.forEach(item => {
+                    item.classList.remove('bg-primary/10', 'text-primary');
+                    item.classList.add('text-gray-600');
+                });
+                document.querySelector('aside ul li a:contains("算法模板")').classList.remove('text-gray-600');
+                document.querySelector('aside ul li a:contains("算法模板")').classList.add('bg-primary/10', 'text-primary');
+            }
+        });
+
+        // 页面加载时处理当前URL中的页码参数
+        const urlParams = new URLSearchParams(window.location.search);
+        const page = urlParams.get('page') || 1;
+        const sort = urlParams.get('sort') || 'desc';
+        const search = urlParams.get('search') || '';
+
+        // 根据当前路径确定加载哪个内容
+        const path = window.location.pathname;
+        if (path.endsWith('/algorithm-templates')) {
+            loadContent('算法模板', page, sort, search);
+        } else if (path.endsWith('/knowledge-graph')) {
+            loadContent('知识图谱', page);
+        }
+
+        // 更新导航高亮
+        navLinks.forEach(item => {
+            item.classList.remove('bg-primary/10', 'text-primary');
+            item.classList.add('text-gray-600');
+        });
+
+        // 根据当前URL确定高亮链接
+        const currentPath = window.location.pathname;
+        navLinks.forEach(link => {
+            if (link.getAttribute('href') === currentPath) {
+                link.classList.remove('text-gray-600');
+                link.classList.add('bg-primary/10', 'text-primary');
+            }
+        });
+
+        // 生成随机渐变颜色
+        function getRandomColor() {
+            const letters = '0123456789ABCDEF';
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        }
+
+        const gradientTexts = document.querySelectorAll('.gradient-text');
+        gradientTexts.forEach(text => {
+            const color1 = getRandomColor();
+            const color2 = getRandomColor();
+            text.style.backgroundImage = `linear-gradient(45deg, ${color1}, ${color2})`;
+        });
+
+        // 处理左侧导航栏收缩/展开
         const sidebar = document.getElementById('sidebar');
         const mainContent = document.getElementById('main-content');
         const sidebarToggle = document.getElementById('sidebar-toggle');
 
         sidebarToggle.addEventListener('click', function () {
-            if (sidebar.classList.contains('w-64')) {
-                sidebar.classList.remove('w-64');
-                sidebar.classList.add('w-0', 'p-0');
-                mainContent.classList.add('pl-0');
-            } else {
-                sidebar.classList.remove('w-0', 'p-0');
-                sidebar.classList.add('w-64');
-                mainContent.classList.remove('pl-0');
+            sidebar.classList.toggle('sidebar-collapsed');
+            mainContent.classList.toggle('main-expanded');
+        });
+
+        // 处理左侧导航栏拖拽调整大小
+        const resizer = document.getElementById('resizer');
+        let isResizing = false;
+
+        resizer.addEventListener('mousedown', function (e) {
+            isResizing = true;
+            document.body.style.cursor = 'col-resize';
+        });
+
+        document.addEventListener('mousemove', function (e) {
+            if (isResizing) {
+                const newWidth = e.clientX;
+                // 限制最小宽度
+                if (newWidth >= 64) {
+                    sidebar.style.width = newWidth + 'px';
+                }
             }
         });
 
-        // 处理侧边栏宽度缩放
-        const separator = document.getElementById('separator');
-        let isDragging = false;
-        let startX;
-        let startWidth;
-
-        separator.addEventListener('mousedown', (e) => {
-            isDragging = true;
-            startX = e.clientX;
-            startWidth = sidebar.offsetWidth;
-        });
-
-        document.addEventListener('mousemove', (e) => {
-            if (isDragging) {
-                const deltaX = e.clientX - startX;
-                const newWidth = startWidth + deltaX;
-                sidebar.style.width = newWidth + 'px';
+        document.addEventListener('mouseup', function () {
+            if (isResizing) {
+                isResizing = false;
+                document.body.style.cursor = 'default';
             }
-        });
-
-        document.addEventListener('mouseup', () => {
-            isDragging = false;
         });
     });
-</script>
-</body>
 
+    document.addEventListener('DOMContentLoaded', function () {
+        // 检查URL参数中是否有login_success标志
+        const urlParams = new URLSearchParams(window.location.search);
+        const loginSuccess = urlParams.get('login_success');
+
+        if (loginSuccess === 'true') {
+            // 获取用户角色
+            var role = "{{ session.get('role', 0) }}";
+            var welcomeMessage = document.getElementById('welcome-message');
+
+            // 根据角色显示不同的欢迎消息
+            if (role == -1) {
+                welcomeMessage.textContent = "欢迎管理员登录系统";
+            } else {
+                welcomeMessage.textContent = "欢迎用户登录系统";
+            }
+
+            // 显示欢迎消息并添加淡入效果
+            welcomeMessage.style.display = 'block';
+            setTimeout(() => {
+                welcomeMessage.style.opacity = '1';
+            }, 100);
+
+            // 3秒后淡出并隐藏欢迎消息
+            setTimeout(function () {
+                welcomeMessage.style.opacity = '0';
+                setTimeout(() => {
+                    welcomeMessage.style.display = 'none';
+
+                    // 移除URL中的login_success参数
+                    history.replaceState(null, null, window.location.pathname);
+                }, 500);
+            }, 3000);
+        }
+    });
+
+</script>
+
+{% block extra_scripts %}{% endblock %}
+</body>
 </html>
