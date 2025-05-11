@@ -357,15 +357,6 @@ def algorithm_templates():
         # 获取页码，默认为第 1 页
         page = int(request.args.get('page', 1))
         per_page = 6
-        offset = (page - 1) * per_page
-
-        # 根据排序参数构建 SQL 查询
-        if sort == 'asc':
-            order_by = 'ORDER BY id ASC'
-        elif sort == 'desc':
-            order_by = 'ORDER BY id DESC'
-        else:
-            order_by = 'ORDER BY created_at DESC'
 
         # 从数据库获取算法模板数据
         with get_mysql_connection() as conn:
@@ -385,6 +376,27 @@ def algorithm_templates():
                 sql_count = f"SELECT COUNT(*) as total {base_sql}"
                 cursor.execute(sql_count, params)
                 total = cursor.fetchone()['total']
+
+                # 计算总页数
+                total_pages = (total + per_page - 1) // per_page
+
+                # 验证页码
+                if page < 1:
+                    page = 1
+                elif page > total_pages:
+                    page = total_pages
+                    # 重定向到更新后的 URL
+                    return redirect(url_for('algorithm_templates', sort=sort, search=search_query, page=page))
+
+                offset = (page - 1) * per_page
+
+                # 根据排序参数构建 SQL 查询
+                if sort == 'asc':
+                    order_by = 'ORDER BY id ASC'
+                elif sort == 'desc':
+                    order_by = 'ORDER BY id DESC'
+                else:
+                    order_by = 'ORDER BY created_at DESC'
 
                 # 查询当前页的数据
                 sql = f"SELECT * {base_sql} {order_by} LIMIT {offset}, {per_page}"
@@ -420,7 +432,6 @@ def algorithm_templates():
                             template['language'] = 'Unknown'
 
         # 计算分页信息
-        total_pages = (total + per_page - 1) // per_page
         has_prev = page > 1
         has_next = page < total_pages
         prev_num = page - 1 if has_prev else None
@@ -498,7 +509,6 @@ def random_algorithm_templates():
     try:
         per_page = 6
         page = int(request.args.get('page', 1))
-        offset = (page - 1) * per_page
 
         # 获取或生成随机ID列表
         if 'random_ids' not in session or request.args.get('new') == 'true':
@@ -510,6 +520,22 @@ def random_algorithm_templates():
                     session.modified = True
         else:
             all_ids = session.get('random_ids', [])
+
+        # 计算总页数
+        total = len(all_ids)
+        total_pages = (total + per_page - 1) // per_page
+
+        # 验证页码
+        if page < 1:
+            page = 1
+            # 重定向到更新后的 URL
+            return redirect(url_for('random_algorithm_templates', page=page, new=request.args.get('new')))
+        elif page > total_pages:
+            page = total_pages
+            # 重定向到更新后的 URL
+            return redirect(url_for('random_algorithm_templates', page=page, new=request.args.get('new')))
+
+        offset = (page - 1) * per_page
 
         # 获取当前页的ID子集
         current_ids = all_ids[offset: offset + per_page]
@@ -553,9 +579,6 @@ def random_algorithm_templates():
                             template['language'] = 'Unknown'
 
         # 计算分页信息
-        total = len(all_ids)
-        total_pages = (total + per_page - 1) // per_page
-
         pagination = {
             'page': page,
             'per_page': per_page,
