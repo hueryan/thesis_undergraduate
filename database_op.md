@@ -45,3 +45,17 @@ CREATE TABLE IF NOT EXISTS algorithm_templates (
 UPDATE invitation_codes 
 SET used_count = 10 
 WHERE id = 2;
+
+```sql
+-- 创建 ds_pdf 表
+CREATE TABLE ds_pdf (
+    -- 唯一标识，自增主键
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    -- PDF 名称，不允许为空
+    pdf_name VARCHAR(255) NOT NULL,
+    -- PDF 路径，不允许为空
+    pdf_path VARCHAR(255) NOT NULL,
+    -- 上传时间，默认值为当前时间
+    upload_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
