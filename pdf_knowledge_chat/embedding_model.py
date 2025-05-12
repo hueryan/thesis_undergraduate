@@ -1,7 +1,7 @@
 from langchain_community.embeddings import HuggingFaceBgeEmbeddings
 from config_milvus import MODEL_NAME
 import os
-# 获取当前脚本所在目录（即 configs 目录）
+
 current_dir = os.path.dirname(os.path.abspath(__file__))
 LOCAL_MODEL_PATH = f"{current_dir}/{MODEL_NAME}"
 
