@@ -174,61 +174,77 @@
 {% endblock %}
 
 {% block content %}
-    <div class="flex flex-col h-full">
-        <!-- 聊天标题 -->
-        <div class="bg-white rounded-t-xl p-4 border-b">
-            <h2 class="text-xl font-semibold text-gray-800 flex items-center">
-                <i class="fa fa-comments mr-2 text-primary"></i>
-                知识图谱智能问答
-            </h2>
-            <p class="text-sm text-gray-500 mt-1">基于RAG技术的智能问答系统</p>
-        </div>
 
-        <!-- 聊天消息区域 -->
-        <div class="chat-messages flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50" id="chat-messages">
-            <!-- 系统欢迎消息 -->
-            <div class="flex justify-center">
-                <div class="bg-white rounded-lg p-4 shadow-sm max-w-3xl w-full text-center">
-                    <p class="text-gray-600">您好！我是您的知识助手，可以问我任何关于数据结构的内容。</p>
-                    <div class="mt-2 text-sm text-gray-400">
-                        <p>示例问题：</p>
-                        <ul class="list-disc list-inside space-y-1 mt-1">
-                            <li>什么是知识图谱？</li>
-                            <li>请解释节点之间的关系</li>
-                            <li>展示最新的算法模板</li>
-                        </ul>
+    <div style="
+        display: flex;
+        flex-direction: row;
+    ">
+        <div class="flex flex-col h-full" style="flex: 1">
+            <!-- 聊天标题 -->
+            <div class="bg-white rounded-t-xl p-4 border-b">
+                <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+                    <i class="fa fa-comments mr-2 text-primary"></i>
+                    数据结构智能问答
+                </h2>
+                <p class="text-sm text-gray-500 mt-1">基于RAG技术的智能问答系统</p>
+                <button id="open-textbook-btn" class="ml-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                    打开教材
+                </button>
+            </div>
+
+            <!-- 聊天消息区域 -->
+            <div class="chat-messages flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50" id="chat-messages">
+                <!-- 系统欢迎消息 -->
+                <div class="flex justify-center">
+                    <div class="bg-white rounded-lg p-4 shadow-sm max-w-3xl w-full text-center">
+                        <p class="text-gray-600">您好！我是您的知识助手，可以问我任何关于数据结构的内容。</p>
+                        <div class="mt-2 text-sm text-gray-400">
+                            <p>示例问题：</p>
+                            <ul class="list-disc list-inside space-y-1 mt-1">
+                                <li>什么是知识图谱？</li>
+                                <li>请解释节点之间的关系</li>
+                                <li>展示最新的算法模板</li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
+
+            <!-- 输入区域 -->
+            <div class="bg-white border-t p-4 rounded-b-xl">
+                <form id="chat-form" class="relative">
+                    <div class="flex space-x-2">
+                    <textarea
+                            id="message-input"
+                            rows="2"
+                            placeholder="请输入您的问题..."
+                            class="flex-1 p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary/50"
+                            style="min-height: 50px; max-height: 150px;"
+                    ></textarea>
+                        <button
+                                type="submit"
+                                class="h-12 px-6 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center"
+                        >
+                            <i class="fa fa-paper-plane mr-2"></i>发送
+                        </button>
+                    </div>
+                    <div class="mt-2 text-sm text-gray-400 flex justify-between items-center">
+                        <div>支持Markdown格式</div>
+                        <div id="typing-indicator" class="hidden">
+                            <i class="fa fa-circle-notch fa-spin mr-1"></i>思考中...
+                        </div>
+                    </div>
+                </form>
+            </div>
         </div>
 
-        <!-- 输入区域 -->
-        <div class="bg-white border-t p-4 rounded-b-xl">
-            <form id="chat-form" class="relative">
-                <div class="flex space-x-2">
-                <textarea
-                        id="message-input"
-                        rows="2"
-                        placeholder="请输入您的问题..."
-                        class="flex-1 p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary/50"
-                        style="min-height: 50px; max-height: 150px;"
-                ></textarea>
-                    <button
-                            type="submit"
-                            class="h-12 px-6 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center"
-                    >
-                        <i class="fa fa-paper-plane mr-2"></i>发送
-                    </button>
-                </div>
-                <div class="mt-2 text-sm text-gray-400 flex justify-between items-center">
-                    <div>支持Markdown格式</div>
-                    <div id="typing-indicator" class="hidden">
-                        <i class="fa fa-circle-notch fa-spin mr-1"></i>思考中...
-                    </div>
-                </div>
-            </form>
+       <!-- PDF 显示区域 -->
+        <div class="w-1/2 h-full" style="flex: 0" id="pdf-viewer">
+            <iframe id="pdf-iframe" class="w-full h-full" src=""></iframe>
         </div>
     </div>
+
+
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -287,7 +303,7 @@
                             const response = await fetch('{{ url_for("chat") }}', {
                                 method: 'POST',
                                 headers: {
-                                    'Content-Type': 'application/json',
+                                    'Content-Type': 'application/pdf',
                                 },
                                 body: JSON.stringify({question: message}),
                                 signal: abortController.signal
@@ -419,6 +435,25 @@
                         form.dispatchEvent(new Event('submit'));
                     }
                 });
+
+                const openTextbookBtn = document.getElementById('open-textbook-btn');
+                const pdfViewer = document.getElementById('pdf-viewer');
+                const pdfIframe = document.getElementById('pdf-iframe');
+
+                openTextbookBtn.addEventListener('click', async () => {
+    try {
+        const pdfId = 1;
+        const response = await fetch(`{{ url_for("get_pdf_path", pdf_id=pdfId) }}`);
+        if (!response.ok) throw new Error(`HTTP错误! 状态码: ${response.status}`);
+        const pdfBlob = await response.blob();
+        const pdfUrl = URL.createObjectURL(pdfBlob);
+        pdfIframe.src = pdfUrl;
+        pdfViewer.style.flex=1;
+    } catch (error) {
+        alert(`请求失败: ${error.message}`);
+    }
+});
+
             }
         )
 
