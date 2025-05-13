@@ -843,7 +843,7 @@ def chat_page():
     if not is_user_logged_in():
         flash('请先登录')
         return redirect(url_for('login'))
-    pdfId = 1
+    pdfId = 2
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return render_template('chat_rag_content.html', pdfId=pdfId)  # 创建内容片段模板
     return render_template('chat_rag.html', pdfId=pdfId)

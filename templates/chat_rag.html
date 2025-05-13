@@ -213,6 +213,9 @@
                 <button id="open-textbook-btn" class="ml-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
                     打开教材
                 </button>
+                <button id="close-textbook-btn" class="ml-2 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 hidden">
+                    收起教材
+                </button>
             </div>
 
             <!-- 聊天消息区域 -->
@@ -273,7 +276,11 @@
             const form = document.getElementById('chat-form');
             const input = document.getElementById('message-input');
             const messagesContainer = document.getElementById('chat-messages');
-            const submitButton = form.querySelector('button[type="submit"]') // 获取发送按钮
+            const submitButton = form.querySelector('button[type="submit"]'); // 获取发送按钮
+            const openTextbookBtn = document.getElementById('open-textbook-btn');
+            const closeTextbookBtn = document.getElementById('close-textbook-btn');
+            const pdfViewer = document.getElementById('pdf-viewer');
+            const pdfIframe = document.getElementById('pdf-iframe');
 
             // 修改发送按钮状态
             function updateButtonState(isThinking) {
@@ -332,7 +339,7 @@
                     if (!response.ok) throw new Error(`HTTP错误! 状态码: ${response.status}`);
 
                     const data = await response.json();
-                    if (!data?.answer) throw new Error('无效的响应格式')
+                    if (!data?.answer) throw new Error('无效的响应格式');
                     addMessage(data.answer, 'bot');
 
                 } catch (error) {
@@ -451,13 +458,9 @@
                 }
             });
 
-            const openTextbookBtn = document.getElementById('open-textbook-btn');
-            const pdfViewer = document.getElementById('pdf-viewer');
-            const pdfIframe = document.getElementById('pdf-iframe');
-
             openTextbookBtn.addEventListener('click', async () => {
                 try {
-                    const pdfId = 1;
+                    const pdfId = {{ pdfId }};
                     const response = await fetch(`{{ url_for("get_pdf_path", pdf_id=pdfId) }}`);
                     if (!response.ok) throw new Error(`HTTP错误! 状态码: ${response.status}`);
                     const pdfBlob = await response.blob();
@@ -466,12 +469,20 @@
                     const viewerUrl = `/public/pdfjs/web/viewer.html?file=${encodeURIComponent(pdfUrl)}#zoom=page-width`;
                     pdfIframe.src = viewerUrl;
 
-                    {#pdfIframe.src = pdfUrl;#}
                     pdfViewer.style.flex = 1; // 让PDF区域占据整个右侧
                     pdfViewer.style.width = 'auto'; // 调整宽度
+                    openTextbookBtn.classList.add('hidden');
+                    closeTextbookBtn.classList.remove('hidden');
                 } catch (error) {
                     alert(`请求失败: ${error.message}`);
                 }
+            });
+
+            closeTextbookBtn.addEventListener('click', () => {
+                pdfViewer.style.flex = 0;
+                pdfViewer.style.width = '0';
+                openTextbookBtn.classList.remove('hidden');
+                closeTextbookBtn.classList.add('hidden');
             });
         });
     </script>
