@@ -200,8 +200,8 @@
 
             const templateId = {{ template.id }};
             fetch(`/main/algorithm-templates/${templateId}/explanation-and-complexity`)
-              .then(response => response.json())
-              .then(data => {
+                .then(response => response.json())
+                .then(data => {
                     // 隐藏加载动画并启用按钮
                     loading.classList.add('hidden');
                     button.disabled = false;
@@ -216,7 +216,7 @@
                         alert(data.error);
                     }
                 })
-              .catch(error => {
+                .catch(error => {
                     // 隐藏加载动画并启用按钮
                     loading.classList.add('hidden');
                     button.disabled = false;
@@ -239,8 +239,8 @@
 
             const templateId = {{ template.id }};
             fetch(`/main/algorithm-templates/${templateId}/executable-example`)
-              .then(response => response.json())
-              .then(data => {
+                .then(response => response.json())
+                .then(data => {
                     // 隐藏加载动画并启用按钮
                     loading.classList.add('hidden');
                     button.disabled = false;
@@ -250,19 +250,24 @@
                         const linkHtml = `
                             <div class="mt-4">
                                 <p class="mb-2">可执行例子：</p>
-                                <pre><code class="${data.language}">${data.executable_example}</code></pre>
+                                <pre><code class="${data.language}"></code></pre>
                                 <p class="my-2">代码可视化：</p>
                                 <a href="${data.tutor_url}" target="_blank" class="text-blue-500 hover:underline">点击此处查看代码可视化</a>
                             </div>
                         `;
                         content.innerHTML = linkHtml;
+
+                        // 使用 textContent 插入代码内容
+                        const codeElement = content.querySelector('pre code');
+                        codeElement.textContent = data.executable_example;
+
                         container.classList.remove('hidden');
                         hljs.highlightAll();
                     } else {
                         alert(data.error);
                     }
                 })
-              .catch(error => {
+                .catch(error => {
                     // 隐藏加载动画并启用按钮
                     loading.classList.add('hidden');
                     button.disabled = false;

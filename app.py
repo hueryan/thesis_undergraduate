@@ -936,7 +936,7 @@ async def async_call_large_model_to_generate_executable_example(code):
         model_name="deepseek-chat"
     )
     # 构建提示信息
-    prompt = f"请根据以下算法代码给出一个可以直接执行的例子：\n{code}"
+    prompt = f"请根据以下算法代码给出一个可以直接执行的例子并在代码中加上注解：\n{code}"
     # 调用模型生成可执行例子
     response = await asyncio.to_thread(llm.invoke, prompt)
     return response.content
