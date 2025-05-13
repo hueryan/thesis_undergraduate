@@ -160,6 +160,33 @@
         .chat-messages::-webkit-scrollbar-thumb:hover {
             background: #a8a8a8;
         }
+
+        /* 确保父容器占据整个可用空间 */
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+
+        /* 整体布局容器 */
+        .main-container {
+            display: flex;
+            flex-direction: row;
+            height: 100%;
+        }
+
+        /* 聊天区域 */
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* PDF 显示区域 */
+        .pdf-container {
+            flex: 0;
+            width: 0; /* 初始宽度为 0 */
+            overflow: hidden;
+        }
     </style>
     <script>
         // 配置marked解析器
@@ -174,12 +201,8 @@
 {% endblock %}
 
 {% block content %}
-
-    <div style="
-        display: flex;
-        flex-direction: row;
-    ">
-        <div class="flex flex-col h-full" style="flex: 1">
+    <div class="main-container">
+        <div class="chat-container">
             <!-- 聊天标题 -->
             <div class="bg-white rounded-t-xl p-4 border-b">
                 <h2 class="text-xl font-semibold text-gray-800 flex items-center">
@@ -214,13 +237,13 @@
             <div class="bg-white border-t p-4 rounded-b-xl">
                 <form id="chat-form" class="relative">
                     <div class="flex space-x-2">
-                    <textarea
-                            id="message-input"
-                            rows="2"
-                            placeholder="请输入您的问题..."
-                            class="flex-1 p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary/50"
-                            style="min-height: 50px; max-height: 150px;"
-                    ></textarea>
+                        <textarea
+                                id="message-input"
+                                rows="2"
+                                placeholder="请输入您的问题..."
+                                class="flex-1 p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                style="min-height: 50px; max-height: 150px;"
+                        ></textarea>
                         <button
                                 type="submit"
                                 class="h-12 px-6 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center"
@@ -238,224 +261,214 @@
             </div>
         </div>
 
-       <!-- PDF 显示区域 -->
-        <div class="w-1/2 h-full" style="flex: 0" id="pdf-viewer">
+        <!-- PDF 显示区域 -->
+        <div class="pdf-container" id="pdf-viewer">
             <iframe id="pdf-iframe" class="w-full h-full" src=""></iframe>
         </div>
     </div>
 
-
-
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-                let abortController = null; // 用于存储终止控制器
-                const form = document.getElementById('chat-form');
-                const input = document.getElementById('message-input');
-                const messagesContainer = document.getElementById('chat-messages');
-                const submitButton = form.querySelector('button[type="submit"]') // 获取发送按钮
+            let abortController = null; // 用于存储终止控制器
+            const form = document.getElementById('chat-form');
+            const input = document.getElementById('message-input');
+            const messagesContainer = document.getElementById('chat-messages');
+            const submitButton = form.querySelector('button[type="submit"]') // 获取发送按钮
 
-                // 修改发送按钮状态
-                function updateButtonState(isThinking) {
-                    submitButton.disabled = false; // 确保按钮可点击
-                    if (isThinking) {
-                        submitButton.innerHTML = `<i class="fa fa-stop mr-2"></i>终止思考`;
-                        submitButton.classList.replace('bg-primary', 'bg-red-500');
-                        submitButton.title = "点击终止当前思考过程"; // 添加悬停提示
+            // 修改发送按钮状态
+            function updateButtonState(isThinking) {
+                submitButton.disabled = false; // 确保按钮可点击
+                if (isThinking) {
+                    submitButton.innerHTML = `<i class="fa fa-stop mr-2"></i>终止思考`;
+                    submitButton.classList.replace('bg-primary', 'bg-red-500');
+                    submitButton.title = "点击终止当前思考过程"; // 添加悬停提示
+                } else {
+                    submitButton.innerHTML = `<i class="fa fa-paper-plane mr-2"></i>发送`;
+                    submitButton.classList.replace('bg-red-500', 'bg-primary');
+                    submitButton.removeAttribute('title');
+                }
+            }
+
+            // 自动调整输入框高度
+            input.addEventListener('input', () => {
+                input.style.height = 'auto';
+                input.style.height = input.scrollHeight + 'px';
+            });
+
+            // 处理消息发送
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const message = input.value.trim();
+
+                // 如果已有进行中的请求，执行终止操作
+                if (abortController) {
+                    abortController.abort();
+                    updateButtonState(false);
+                    return;
+                }
+                if (!message) return;
+
+                // 清空输入并添加用户消息
+                input.value = '';
+                input.style.height = '50px';
+                addMessage(message, 'user');
+
+                // 创建终止控制器
+                abortController = new AbortController();
+                updateButtonState(true);
+                const typingIndicator = addTypingIndicator();
+
+                try {
+                    // 发送请求
+                    const response = await fetch('{{ url_for("chat") }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json', // 修改为正确的 Content-Type
+                        },
+                        body: JSON.stringify({question: message}),
+                        signal: abortController.signal
+                    });
+
+                    if (!response.ok) throw new Error(`HTTP错误! 状态码: ${response.status}`);
+
+                    const data = await response.json();
+                    if (!data?.answer) throw new Error('无效的响应格式')
+                    addMessage(data.answer, 'bot');
+
+                } catch (error) {
+                    // 确保异常时也移除加载状态
+                    if (error.name === 'AbortError') {
+                        addMessage('对话已被用户终止', 'error');
                     } else {
-                        submitButton.innerHTML = `<i class="fa fa-paper-plane mr-2"></i>发送`;
-                        submitButton.classList.replace('bg-red-500', 'bg-primary');
-                        submitButton.removeAttribute('title');
+                        addMessage(`请求失败: ${error.message}`, 'error');
                     }
-                }
-
-                // 自动调整输入框高度
-                input.addEventListener('input', () => {
-                    input.style.height = 'auto';
-                    input.style.height = input.scrollHeight + 'px';
-                });
-
-                // 处理消息发送
-                form.addEventListener('submit', async (e) => {
-                        e.preventDefault();
-                        const message = input.value.trim();
-
-                        // 如果已有进行中的请求，执行种植操作
-                        if (abortController) {
-                            abortController.abort();
-                            updateButtonState(false);
-                            return;
-                        }
-                        if (!message) return;
-
-                        // 清空输入并添加用户消息
-                        input.value = '';
-                        input.style.height = '50px';
-                        addMessage(message, 'user');
-
-                        // 创建终止控制器
-                        abortController = new AbortController();
-                        updateButtonState(true);
-                        const typingIndicator = addTypingIndicator();
-
-
-                        try {
-                            // 发送请求
-                            const response = await fetch('{{ url_for("chat") }}', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/pdf',
-                                },
-                                body: JSON.stringify({question: message}),
-                                signal: abortController.signal
-                            });
-
-                            if (!response.ok) throw new Error(`HTTP错误! 状态码: ${response.status}`);
-
-                            const data = await response.json();
-                            if (!data?.answer) throw new Error('无效的相应格式')
-                            addMessage(data.answer, 'bot');
-
-                        } catch (error) {
-                            // 确保异常时也移除加载状态
-                            if (error.name === 'AbortError') {
-                                addMessage('对话已被用户终止', 'error');
-                            } else {
-                                addMessage(`请求失败: ${error.message}`, 'error');
-                            }
-                        } finally {
-                            abortController = null;
-                            updateButtonState(false);
-                            typingIndicator.remove();
-                            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                        }
-                    }
-                )
-
-
-                // 新增加载状态函数
-                function addTypingIndicator() {
-                    const typingDiv = document.createElement('div');
-                    typingDiv.className = 'flex justify-start mb-4';
-                    typingDiv.innerHTML = `
-                        <div class="typing-indicator">
-                            <div class="dot-flashing"></div>
-                            <span class="text-gray-600 text-sm">正在思考中...</span>
-                        </div>`;
-                    messagesContainer.appendChild(typingDiv);
-                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                    return typingDiv;
-                }
-
-                // 添加消息到聊天窗口
-                function addMessage(content, role) {
-                    const messageDiv = document.createElement('div');
-                    messageDiv.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
-
-                    const bubble = document.createElement('div');
-                    bubble.className = `max-w-3xl p-4 rounded-xl ${
-                        role === 'user'
-                            ? 'bg-primary text-white'
-                            : role === 'error'
-                                ? 'bg-red-100 text-red-700'
-                                : 'bg-white shadow-sm markdown-body'  // 添加markdown-body类
-                    }`;
-
-
-                    // 使用marked解析Markdown
-                    const processedContent = marked.parse(content);
-
-                    bubble.innerHTML = processedContent;
-                    messageDiv.appendChild(bubble);
-                    messagesContainer.appendChild(messageDiv);
-
-                    // 添加复制按钮到所有代码块
-                    addCopyButtons(bubble);
-
-                    // 高亮代码块
-                    hljs.highlightAll();
-
-
-                    // 滚动到底部
+                } finally {
+                    abortController = null;
+                    updateButtonState(false);
+                    typingIndicator.remove();
                     messagesContainer.scrollTop = messagesContainer.scrollHeight;
                 }
+            });
 
-                // 复制按钮功能
-                function addCopyButtons(container) {
-                    container.querySelectorAll('pre').forEach(preElement => {
-                        // 删除旧按钮（防止重复）
-                        const existingButton = preElement.querySelector('.copy-button');
-                        if (existingButton) existingButton.remove();
+            // 新增加载状态函数
+            function addTypingIndicator() {
+                const typingDiv = document.createElement('div');
+                typingDiv.className = 'flex justify-start mb-4';
+                typingDiv.innerHTML = `
+                    <div class="typing-indicator">
+                        <div class="dot-flashing"></div>
+                        <span class="text-gray-600 text-sm">正在思考中...</span>
+                    </div>`;
+                messagesContainer.appendChild(typingDiv);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                return typingDiv;
+            }
 
-                        // 获取语言类型
-                        const codeElement = preElement.querySelector('code');
-                        const language = Array.from(codeElement.classList)
-                                .find(c => c.startsWith('language-'))
-                                ?.replace('language-', '')
-                            || 'text';
+            // 添加消息到聊天窗口
+            function addMessage(content, role) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
 
-                        // 创建新按钮
-                        const button = document.createElement('button');
-                        button.className = 'copy-button';
-                        button.innerHTML = `
-                            <div class="flex items-center gap-2">
-                                <i class="fa fa-copy text-gray-600 text-sm"></i>
-                                <span class="text-xs text-gray-600">复制</span>
-                                <span class="lang-tag text-xs text-gray-400">${language}</span>
-                            </div>
+                const bubble = document.createElement('div');
+                bubble.className = `max-w-3xl p-4 rounded-xl ${
+                    role === 'user'
+                        ? 'bg-primary text-white'
+                        : role === 'error'
+                            ? 'bg-red-100 text-red-700'
+                            : 'bg-white shadow-sm markdown-body'  // 添加markdown-body类
+                }`;
+
+                // 使用marked解析Markdown
+                const processedContent = marked.parse(content);
+
+                bubble.innerHTML = processedContent;
+                messageDiv.appendChild(bubble);
+                messagesContainer.appendChild(messageDiv);
+
+                // 添加复制按钮到所有代码块
+                addCopyButtons(bubble);
+
+                // 高亮代码块
+                hljs.highlightAll();
+
+                // 滚动到底部
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+
+            // 复制按钮功能
+            function addCopyButtons(container) {
+                container.querySelectorAll('pre').forEach(preElement => {
+                    // 删除旧按钮（防止重复）
+                    const existingButton = preElement.querySelector('.copy-button');
+                    if (existingButton) existingButton.remove();
+
+                    // 获取语言类型
+                    const codeElement = preElement.querySelector('code');
+                    const language = Array.from(codeElement.classList)
+                        .find(c => c.startsWith('language-'))
+                        ?.replace('language-', '')
+                        || 'text';
+
+                    // 创建新按钮
+                    const button = document.createElement('button');
+                    button.className = 'copy-button';
+                    button.innerHTML = `
+                        <div class="flex items-center gap-2">
+                            <i class="fa fa-copy text-gray-600 text-sm"></i>
+                            <span class="text-xs text-gray-600">复制</span>
+                            <span class="lang-tag text-xs text-gray-400">${language}</span>
+                        </div>
                     `;
 
-                        // 点击事件处理
-                        button.onclick = (e) => {
-                            e.stopPropagation();
-                            const code = preElement.querySelector('code').innerText;
-                            navigator.clipboard.writeText(code).then(() => {
-                                button.innerHTML = `
+                    // 点击事件处理
+                    button.onclick = (e) => {
+                        e.stopPropagation();
+                        const code = preElement.querySelector('code').innerText;
+                        navigator.clipboard.writeText(code).then(() => {
+                            button.innerHTML = `
                                 <i class="fa fa-check text-green-500 text-sm"></i>
                                 <span class="text-xs text-green-500">已复制</span>
                             `;
-                                setTimeout(() => {
-                                    button.innerHTML = `
+                            setTimeout(() => {
+                                button.innerHTML = `
                                     <i class="fa fa-copy text-gray-600 text-sm"></i>
                                     <span class="text-xs text-gray-600">复制</span>
                                 `;
-                                }, 2000);
-                            });
-                        };
+                            }, 2000);
+                        });
+                    };
 
-                        preElement.style.position = 'relative';
-                        preElement.prepend(button);  // 使用prepend确保按钮在最上层
-                    });
-                }
-
-
-                // 回车发送（Shift+Enter换行）
-                input.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        form.dispatchEvent(new Event('submit'));
-                    }
+                    preElement.style.position = 'relative';
+                    preElement.prepend(button);  // 使用prepend确保按钮在最上层
                 });
-
-                const openTextbookBtn = document.getElementById('open-textbook-btn');
-                const pdfViewer = document.getElementById('pdf-viewer');
-                const pdfIframe = document.getElementById('pdf-iframe');
-
-                openTextbookBtn.addEventListener('click', async () => {
-    try {
-        const pdfId = 1;
-        const response = await fetch(`{{ url_for("get_pdf_path", pdf_id=pdfId) }}`);
-        if (!response.ok) throw new Error(`HTTP错误! 状态码: ${response.status}`);
-        const pdfBlob = await response.blob();
-        const pdfUrl = URL.createObjectURL(pdfBlob);
-        pdfIframe.src = pdfUrl;
-        pdfViewer.style.flex=1;
-    } catch (error) {
-        alert(`请求失败: ${error.message}`);
-    }
-});
-
             }
-        )
 
+            // 回车发送（Shift+Enter换行）
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    form.dispatchEvent(new Event('submit'));
+                }
+            });
+
+            const openTextbookBtn = document.getElementById('open-textbook-btn');
+            const pdfViewer = document.getElementById('pdf-viewer');
+            const pdfIframe = document.getElementById('pdf-iframe');
+
+            openTextbookBtn.addEventListener('click', async () => {
+                try {
+                    const pdfId = 1;
+                    const response = await fetch(`{{ url_for("get_pdf_path", pdf_id=pdfId) }}`);
+                    if (!response.ok) throw new Error(`HTTP错误! 状态码: ${response.status}`);
+                    const pdfBlob = await response.blob();
+                    const pdfUrl = URL.createObjectURL(pdfBlob);
+                    pdfIframe.src = pdfUrl;
+                    pdfViewer.style.flex = 1; // 让PDF区域占据整个右侧
+                    pdfViewer.style.width = 'auto'; // 调整宽度
+                } catch (error) {
+                    alert(`请求失败: ${error.message}`);
+                }
+            });
+        });
     </script>
 {% endblock %}
