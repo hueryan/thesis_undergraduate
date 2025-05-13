@@ -9,13 +9,14 @@ pdf_knowledge_chat_dir = os.path.join(current_dir, 'pdf_knowledge_chat')
 sys.path.append(pdf_knowledge_chat_dir)
 
 
-from configs.database_config import MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PW, MYSQL_DB, MYSQL_USER_TABLE, MYSQL_INVITATION_CODES_TABLE, MYSQL_ALGORITHM_TEMPLATES_TABLE
+from configs.database_config import MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PW, MYSQL_DB, MYSQL_USER_TABLE, MYSQL_INVITATION_CODES_TABLE, MYSQL_ALGORITHM_TEMPLATES_TABLE, DEEPSEEK_API_KEY
 from data_structure_kg_workspace.config_neo4j import NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from pdf_knowledge_chat.chat_session import ChatSession
 from dotenv import load_dotenv
 from datetime import datetime
 from neo4j import GraphDatabase
+from langchain_openai import ChatOpenAI
 import pymysql
 import hashlib  # 用于密码哈希
 import secrets
@@ -652,6 +653,7 @@ def get_all_algorithm_templates():
             return cursor.fetchall()
 
 
+
 @app.route('/admin/algorithm-templates', methods=['GET'])
 def admin_algorithm_templates():
     """管理员查看所有算法模板"""
@@ -843,6 +845,75 @@ def chat_page():
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return render_template('chat_rag_content.html')  # 创建内容片段模板
     return render_template('chat_rag.html')
+
+# 获取算法模板通过ID
+def get_algorithm_template_by_id(template_id):
+    return get_algorithm_template(template_id)
+
+# 调用大模型生成代码解释
+# 调用大模型生成代码解释
+def call_large_model_to_explain_code(code):
+    # 初始化 DeepSeek 模型
+    llm = ChatOpenAI(
+        openai_api_base="https://api.deepseek.com/v1",
+        openai_api_key=DEEPSEEK_API_KEY,
+        model_name="deepseek-chat"
+    )
+    # 构建提示信息
+    prompt = f"请解释以下代码：\n{code}"
+    # 调用模型生成解释
+    response = llm.invoke(prompt)
+    return response.content
+
+
+# 获取算法代码解释
+def get_algorithm_code_explanation(template_id):
+    template = get_algorithm_template_by_id(template_id)
+    if template:
+        code = template['code']
+        return call_large_model_to_explain_code(code)
+    return None
+
+
+# 分析算法复杂度
+def analyze_algorithm_complexity(template_id):
+    template = get_algorithm_template(template_id)
+    if template:
+        code = template['code']
+        # 初始化 DeepSeek 模型
+        llm = ChatOpenAI(
+            openai_api_base="https://api.deepseek.com/v1",
+            openai_api_key=DEEPSEEK_API_KEY,
+            model_name="deepseek-chat"
+        )
+        # 构建提示信息
+        prompt = f"""
+            请分析以下代码的时间复杂度和空间复杂度：\n{code}
+            
+            要求：
+                输出方便阅读的格式
+        """
+        # 调用模型生成复杂度分析
+        response = llm.invoke(prompt)
+        return response.content
+    return None
+
+# 同时获取代码注释和复杂度分析
+@app.route('/main/algorithm-templates/<int:template_id>/explanation-and-complexity', methods=['GET'])
+def get_algorithm_explanation_and_complexity(template_id):
+    # 确保用户已登录
+    if not is_user_logged_in():
+        flash('请先登录')
+        return redirect(url_for('login'))
+
+    explanation = get_algorithm_code_explanation(template_id)
+    complexity = analyze_algorithm_complexity(template_id)
+
+    if explanation and complexity:
+        combined_md = f"### 代码注释\n{explanation}\n\n### 复杂度分析\n{complexity}"
+        return jsonify({"explanation_and_complexity": combined_md})
+    return jsonify({"error": "无法获取代码注释或复杂度分析"}), 404
+
 
 if __name__ == '__main__':
     app.run(debug=True)

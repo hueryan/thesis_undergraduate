@@ -17,28 +17,56 @@
             内容加载中...
         </div>
 
+        <!-- 注释和复杂度 -->
+        <div class="mt-4 flex space-x-4">
+            <button id="get-explanation-and-complexity-button"
+                    class="bg-gradient-to-r from-blue-500 to-purple-500 text-white py-2 px-4 rounded-md hover:from-blue-600 hover:to-purple-600 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-opacity-50">
+                获取代码注释和复杂度分析
+            </button>
+
+            <!-- 加载动画 -->
+            <div id="loading"
+                 class="ml-4 inline-block border-4 border-t-4 border-blue-500 rounded-full w-6 h-6 animate-spin hidden"></div>
+        </div>
+
+        <!-- 代码注释和复杂度分析结果显示容器 -->
+        <div id="explanation-and-complexity-container"
+             class="mt-4 bg-white rounded-lg shadow-sm border border-gray-200 p-6 hidden">
+            <h2 class="text-lg font-bold text-gray-800">代码注释和复杂度分析</h2>
+            <div id="explanation-and-complexity-content"></div>
+        </div>
+
+
         <!-- 返回按钮 -->
         <div class="mt-8">
-            <button id="back-button" class="bg-gradient-to-r from-blue-500 to-purple-500 text-white py-2 px-4 rounded-md hover:from-blue-600 hover:to-purple-600 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-opacity-50">
+            <button id="back-button"
+                    class="bg-gradient-to-r from-blue-500 to-purple-500 text-white py-2 px-4 rounded-md hover:from-blue-600 hover:to-purple-600 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-opacity-50">
                 返回
             </button>
         </div>
     </div>
 
     <!-- Markdown解析 -->
-
     <script src="https://cdn.jsdelivr.net/npm/marked@5.1.1/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-
-    <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.5/purify.min.js"></script>
-
     <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
     <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <!-- 引入markdown-it库 -->
     <script src="https://cdn.jsdelivr.net/npm/markdown-it@13.0.1/dist/markdown-it.min.js"></script>
+    <style>
+        /* 定义旋转动画 */
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+    </style>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // 初始化代码高亮
@@ -74,7 +102,6 @@
             });
         });
     </script>
-
     <script>
         // 增强版初始化逻辑
         function initMarkdownRender() {
@@ -87,7 +114,7 @@
 
                 // 配置Markdown解析
                 marked.setOptions({
-                    highlight: function(code, lang) {
+                    highlight: function (code, lang) {
                         const validLang = hljs.getLanguage(lang) ? lang : 'plaintext';
                         return hljs.highlight(code, {
                             language: validLang,
@@ -141,8 +168,47 @@
         }
 
         // 添加返回按钮点击事件
-        document.getElementById('back-button').addEventListener('click', function() {
+        document.getElementById('back-button').addEventListener('click', function () {
             window.history.back();
+        });
+
+        // 添加合并按钮点击事件
+        document.getElementById('get-explanation-and-complexity-button').addEventListener('click', function () {
+            const button = this;
+            const loading = document.getElementById('loading');
+            const container = document.getElementById('explanation-and-complexity-container');
+            const content = document.getElementById('explanation-and-complexity-content');
+
+            // 禁用按钮并显示加载动画
+            button.disabled = true;
+            loading.classList.remove('hidden');
+
+            const templateId = {{ template.id }};
+            fetch(`/main/algorithm-templates/${templateId}/explanation-and-complexity`)
+                .then(response => response.json())
+                .then(data => {
+                    // 隐藏加载动画并启用按钮
+                    loading.classList.add('hidden');
+                    button.disabled = false;
+
+                    if (data.explanation_and_complexity) {
+                        const md = window.markdownit();
+                        const html = md.render(data.explanation_and_complexity);
+                        content.innerHTML = html;
+                        container.classList.remove('hidden');
+                        hljs.highlightAll();
+                    } else {
+                        alert(data.error);
+                    }
+                })
+                .catch(error => {
+                    // 隐藏加载动画并启用按钮
+                    loading.classList.add('hidden');
+                    button.disabled = false;
+
+                    console.error('请求错误:', error);
+                    alert('请求代码注释和复杂度分析时发生错误');
+                });
         });
     </script>
 {% endblock %}
