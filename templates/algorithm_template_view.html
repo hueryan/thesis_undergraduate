@@ -200,8 +200,8 @@
 
             const templateId = {{ template.id }};
             fetch(`/main/algorithm-templates/${templateId}/explanation-and-complexity`)
-                .then(response => response.json())
-                .then(data => {
+              .then(response => response.json())
+              .then(data => {
                     // 隐藏加载动画并启用按钮
                     loading.classList.add('hidden');
                     button.disabled = false;
@@ -216,7 +216,7 @@
                         alert(data.error);
                     }
                 })
-                .catch(error => {
+              .catch(error => {
                     // 隐藏加载动画并启用按钮
                     loading.classList.add('hidden');
                     button.disabled = false;
@@ -239,38 +239,30 @@
 
             const templateId = {{ template.id }};
             fetch(`/main/algorithm-templates/${templateId}/executable-example`)
-                .then(response => response.json())
-                .then(data => {
+              .then(response => response.json())
+              .then(data => {
                     // 隐藏加载动画并启用按钮
                     loading.classList.add('hidden');
                     button.disabled = false;
 
                     if (data.executable_example) {
-                        // 构建定制化的Python Tutor iframe
-                        const iframeHtml = `
+                        // 构建可执行例子和代码可视化链接
+                        const linkHtml = `
                             <div class="mt-4">
                                 <p class="mb-2">可执行例子：</p>
                                 <pre><code class="${data.language}">${data.executable_example}</code></pre>
                                 <p class="my-2">代码可视化：</p>
-                                <div class="border rounded-lg overflow-hidden relative" style="height: 520px">
-                                  <iframe
-                                      src="${data.tutor_url}"
-                                      width="100%"
-                                      height="100%"
-                                      frameborder="0"
-                                      style="position: absolute; top: -60px; left: 0; right: 0; bottom: 0; margin: 0; padding: 0; border: none; overflow: hidden;">
-                                  </iframe>
-                                </div>
+                                <a href="${data.tutor_url}" target="_blank" class="text-blue-500 hover:underline">点击此处查看代码可视化</a>
                             </div>
                         `;
-                        content.innerHTML = iframeHtml;
+                        content.innerHTML = linkHtml;
                         container.classList.remove('hidden');
                         hljs.highlightAll();
                     } else {
                         alert(data.error);
                     }
                 })
-                .catch(error => {
+              .catch(error => {
                     // 隐藏加载动画并启用按钮
                     loading.classList.add('hidden');
                     button.disabled = false;

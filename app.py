@@ -998,8 +998,8 @@ async def get_algorithm_executable_example(template_id):
         # 构建Python Tutor URL
         encoded_code = urllib.parse.quote_plus(code_content)
 
-        # tutor_url = f'https://pythontutor.com/iframe-embed.html#code={encoded_code}&codeDivHeight=800&codeDivWidth=600&cumulative=false&curInstr=3&heapPrimitives=nevernest&origin=opt-frontend.js&py={tutor_lang}&rawInputLstJSON=%5B%5D&textReferences=false'
-        tutor_url = f'https://pythontutor.com/iframe-embed.html#code={encoded_code}&cumulative=false&curInstr=3&heapPrimitives=nevernest&origin=opt-frontend.js&py={tutor_lang}&rawInputLstJSON=%5B%5D&textReferences=false'
+        tutor_url = f'https://pythontutor.com/iframe-embed.html#code={encoded_code}&codeDivHeight=800&codeDivWidth=600&cumulative=false&curInstr=3&heapPrimitives=nevernest&origin=opt-frontend.js&py={tutor_lang}&rawInputLstJSON=%5B%5D&textReferences=false'
+        # tutor_url = f'https://pythontutor.com/iframe-embed.html#code={encoded_code}&cumulative=false&curInstr=3&heapPrimitives=nevernest&origin=opt-frontend.js&py={tutor_lang}&rawInputLstJSON=%5B%5D&textReferences=false'
         return jsonify({
             "executable_example": code_content,
             "tutor_url": tutor_url,
