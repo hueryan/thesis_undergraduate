@@ -17,16 +17,19 @@
             内容加载中...
         </div>
 
-        <!-- 注释和复杂度 -->
+        <!-- 合并后的按钮 -->
         <div class="mt-4 flex space-x-4">
             <button id="get-explanation-and-complexity-button"
                     class="bg-gradient-to-r from-blue-500 to-purple-500 text-white py-2 px-4 rounded-md hover:from-blue-600 hover:to-purple-600 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-opacity-50">
                 获取代码注释和复杂度分析
             </button>
-
+            <button id="get-executable-example-button"
+                    class="bg-gradient-to-r from-green-500 to-yellow-500 text-white py-2 px-4 rounded-md hover:from-green-600 hover:to-yellow-600 focus:outline-none focus:ring-2 focus:ring-green-300 focus:ring-opacity-50">
+                获取可执行例子
+            </button>
             <!-- 加载动画 -->
             <div id="loading"
-                 class="ml-4 inline-block border-4 border-t-4 border-blue-500 rounded-full w-6 h-6 animate-spin hidden"></div>
+                 class="ml-4 inline-block border-4 border-t-4 border-blue-500 border-radius-full w-6 h-6 animate-spin hidden"></div>
         </div>
 
         <!-- 代码注释和复杂度分析结果显示容器 -->
@@ -36,6 +39,12 @@
             <div id="explanation-and-complexity-content"></div>
         </div>
 
+        <!-- 可执行例子和代码可视化结果显示容器 -->
+        <div id="executable-example-container"
+             class="mt-4 bg-white rounded-lg shadow-sm border border-gray-200 p-6 hidden">
+            <h2 class="text-lg font-bold text-gray-800">可执行例子和代码可视化</h2>
+            <div id="executable-example-content"></div>
+        </div>
 
         <!-- 返回按钮 -->
         <div class="mt-8">
@@ -47,10 +56,15 @@
     </div>
 
     <!-- Markdown解析 -->
+
     <script src="https://cdn.jsdelivr.net/npm/marked@5.1.1/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.5/purify.min.js"></script>
+
     <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
     <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <!-- 引入markdown-it库 -->
@@ -102,6 +116,7 @@
             });
         });
     </script>
+
     <script>
         // 增强版初始化逻辑
         function initMarkdownRender() {
@@ -208,6 +223,60 @@
 
                     console.error('请求错误:', error);
                     alert('请求代码注释和复杂度分析时发生错误');
+                });
+        });
+
+        // 添加获取可执行例子按钮点击事件
+        document.getElementById('get-executable-example-button').addEventListener('click', function () {
+            const button = this;
+            const loading = document.getElementById('loading');
+            const container = document.getElementById('executable-example-container');
+            const content = document.getElementById('executable-example-content');
+
+            // 禁用按钮并显示加载动画
+            button.disabled = true;
+            loading.classList.remove('hidden');
+
+            const templateId = {{ template.id }};
+            fetch(`/main/algorithm-templates/${templateId}/executable-example`)
+                .then(response => response.json())
+                .then(data => {
+                    // 隐藏加载动画并启用按钮
+                    loading.classList.add('hidden');
+                    button.disabled = false;
+
+                    if (data.executable_example) {
+                        // 构建定制化的Python Tutor iframe
+                        const iframeHtml = `
+                            <div class="mt-4">
+                                <p class="mb-2">可执行例子：</p>
+                                <pre><code class="${data.language}">${data.executable_example}</code></pre>
+                                <p class="my-2">代码可视化：</p>
+                                <div class="border rounded-lg overflow-hidden relative" style="height: 520px">
+                                  <iframe
+                                      src="${data.tutor_url}"
+                                      width="100%"
+                                      height="100%"
+                                      frameborder="0"
+                                      style="position: absolute; top: -60px; left: 0; right: 0; bottom: 0; margin: 0; padding: 0; border: none; overflow: hidden;">
+                                  </iframe>
+                                </div>
+                            </div>
+                        `;
+                        content.innerHTML = iframeHtml;
+                        container.classList.remove('hidden');
+                        hljs.highlightAll();
+                    } else {
+                        alert(data.error);
+                    }
+                })
+                .catch(error => {
+                    // 隐藏加载动画并启用按钮
+                    loading.classList.add('hidden');
+                    button.disabled = false;
+
+                    console.error('请求错误:', error);
+                    alert('请求可执行例子时发生错误');
                 });
         });
     </script>

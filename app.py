@@ -1,6 +1,6 @@
 import sys
 import os
-
+import asyncio
 # 获取当前脚本所在目录
 current_dir = os.path.dirname(os.path.abspath(__file__))
 # 构建 milvus_manager.py等 所在目录的路径
@@ -8,7 +8,7 @@ pdf_knowledge_chat_dir = os.path.join(current_dir, 'pdf_knowledge_chat')
 # 将该目录添加到 Python 路径中
 sys.path.append(pdf_knowledge_chat_dir)
 
-
+import urllib
 from configs.database_config import MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PW, MYSQL_DB, MYSQL_USER_TABLE, MYSQL_INVITATION_CODES_TABLE, MYSQL_ALGORITHM_TEMPLATES_TABLE, DEEPSEEK_API_KEY
 from data_structure_kg_workspace.config_neo4j import NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
@@ -850,9 +850,19 @@ def chat_page():
 def get_algorithm_template_by_id(template_id):
     return get_algorithm_template(template_id)
 
+# 无限缓存装饰器
+def unlimited_cache(func):
+    cache = {}
+    async def wrapper(*args, **kwargs):
+        key = (args, tuple(sorted(kwargs.items())))
+        if key not in cache:
+            cache[key] = await func(*args, **kwargs)
+        return cache[key]
+    return wrapper
+
 # 调用大模型生成代码解释
-# 调用大模型生成代码解释
-def call_large_model_to_explain_code(code):
+@unlimited_cache
+async def async_call_large_model_to_explain_code(code):
     # 初始化 DeepSeek 模型
     llm = ChatOpenAI(
         openai_api_base="https://api.deepseek.com/v1",
@@ -862,58 +872,141 @@ def call_large_model_to_explain_code(code):
     # 构建提示信息
     prompt = f"请解释以下代码：\n{code}"
     # 调用模型生成解释
-    response = llm.invoke(prompt)
+    response = await asyncio.to_thread(llm.invoke, prompt)
     return response.content
 
+# 分析算法复杂度
+@unlimited_cache
+async def async_call_large_model_toanalyze_algorithm_complexity(code):
+    # 初始化 DeepSeek 模型
+    llm = ChatOpenAI(
+        openai_api_base="https://api.deepseek.com/v1",
+        openai_api_key=DEEPSEEK_API_KEY,
+        model_name="deepseek-chat"
+    )
+    # 构建提示信息
+    prompt = f"请分析以下代码的时间复杂度和空间复杂度：\n{code}"
+    # 调用模型生成复杂度分析
+    response = await asyncio.to_thread(llm.invoke, prompt)
+    return response.content
 
 # 获取算法代码解释
-def get_algorithm_code_explanation(template_id):
+async def async_get_algorithm_code_explanation(template_id):
     template = get_algorithm_template_by_id(template_id)
     if template:
         code = template['code']
-        return call_large_model_to_explain_code(code)
+        return await async_call_large_model_to_explain_code(code)
     return None
 
-
 # 分析算法复杂度
-def analyze_algorithm_complexity(template_id):
+async def async_analyze_algorithm_complexity(template_id):
     template = get_algorithm_template(template_id)
     if template:
         code = template['code']
-        # 初始化 DeepSeek 模型
-        llm = ChatOpenAI(
-            openai_api_base="https://api.deepseek.com/v1",
-            openai_api_key=DEEPSEEK_API_KEY,
-            model_name="deepseek-chat"
-        )
-        # 构建提示信息
-        prompt = f"""
-            请分析以下代码的时间复杂度和空间复杂度：\n{code}
-            
-            要求：
-                输出方便阅读的格式
-        """
-        # 调用模型生成复杂度分析
-        response = llm.invoke(prompt)
-        return response.content
+        return await async_call_large_model_toanalyze_algorithm_complexity(code)
     return None
+
+
 
 # 同时获取代码注释和复杂度分析
 @app.route('/main/algorithm-templates/<int:template_id>/explanation-and-complexity', methods=['GET'])
-def get_algorithm_explanation_and_complexity(template_id):
+async def get_algorithm_explanation_and_complexity(template_id):
     # 确保用户已登录
     if not is_user_logged_in():
         flash('请先登录')
         return redirect(url_for('login'))
 
-    explanation = get_algorithm_code_explanation(template_id)
-    complexity = analyze_algorithm_complexity(template_id)
+    explanation_task = async_get_algorithm_code_explanation(template_id)
+    complexity_task = async_analyze_algorithm_complexity(template_id)
+
+    explanation, complexity = await asyncio.gather(explanation_task, complexity_task)
 
     if explanation and complexity:
         combined_md = f"### 代码注释\n{explanation}\n\n### 复杂度分析\n{complexity}"
         return jsonify({"explanation_and_complexity": combined_md})
     return jsonify({"error": "无法获取代码注释或复杂度分析"}), 404
 
+# 调用大模型生成可执行例子
+@unlimited_cache
+async def async_call_large_model_to_generate_executable_example(code):
+    # 初始化 DeepSeek 模型
+    llm = ChatOpenAI(
+        openai_api_base="https://api.deepseek.com/v1",
+        openai_api_key=DEEPSEEK_API_KEY,
+        model_name="deepseek-chat"
+    )
+    # 构建提示信息
+    prompt = f"请根据以下算法代码给出一个可以直接执行的例子：\n{code}"
+    # 调用模型生成可执行例子
+    response = await asyncio.to_thread(llm.invoke, prompt)
+    return response.content
+
+# 获取算法可执行例子
+async def async_get_algorithm_executable_example(template_id):
+    template = get_algorithm_template_by_id(template_id)
+    if template:
+        code = template['code']
+        return await async_call_large_model_to_generate_executable_example(code)
+    return None
+
+# 获取算法可执行例子和代码可视化
+@app.route('/main/algorithm-templates/<int:template_id>/executable-example', methods=['GET'])
+async def get_algorithm_executable_example(template_id):
+    # 确保用户已登录
+    if not is_user_logged_in():
+        flash('请先登录')
+        return redirect(url_for('login'))
+
+    executable_example = await async_get_algorithm_executable_example(template_id)
+
+    if executable_example:
+        # 提取代码块的语言和内容
+        code_match = re.search(
+            r'```\s*?(\w+)?\s*?\n(.*?)```',  # 允许语言标识可选、前后空格
+            executable_example,
+            re.DOTALL | re.IGNORECASE  # 支持多行匹配且忽略大小写
+        )
+        if not code_match:
+            # 尝试匹配无语言标识的代码块
+            code_match = re.search(
+                r'```\s*?\n(.*?)```',
+                executable_example,
+                re.DOTALL
+            )
+            if code_match:
+                lang = 'plaintext'
+                code_content = code_match.group(1).strip()
+            else:
+                return jsonify({"error": f"代码格式解析失败，原始内容：{executable_example[:100]}..."}), 400
+        else:
+            lang = (code_match.group(1) or 'plaintext').lower()
+            code_content = code_match.group(2).strip()  # 去除首尾空格
+
+
+
+        # 映射语言到Python Tutor环境
+        lang_mapping = {
+            'python': '3',
+            'javascript': 'js',
+            'java': 'java',
+            'c': 'c',
+            'cpp': 'cpp',
+            'csharp': 'csharp'
+        }
+        tutor_lang = lang_mapping.get(lang, '3')  # 默认Python
+
+        # 构建Python Tutor URL
+        encoded_code = urllib.parse.quote_plus(code_content)
+
+        # tutor_url = f'https://pythontutor.com/iframe-embed.html#code={encoded_code}&codeDivHeight=800&codeDivWidth=600&cumulative=false&curInstr=3&heapPrimitives=nevernest&origin=opt-frontend.js&py={tutor_lang}&rawInputLstJSON=%5B%5D&textReferences=false'
+        tutor_url = f'https://pythontutor.com/iframe-embed.html#code={encoded_code}&cumulative=false&curInstr=3&heapPrimitives=nevernest&origin=opt-frontend.js&py={tutor_lang}&rawInputLstJSON=%5B%5D&textReferences=false'
+        return jsonify({
+            "executable_example": code_content,
+            "tutor_url": tutor_url,
+            "language": lang
+        })
+
+    return jsonify({"error": "无法获取可执行例子"}), 404
 
 if __name__ == '__main__':
     app.run(debug=True)
