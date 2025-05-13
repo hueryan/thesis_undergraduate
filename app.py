@@ -9,9 +9,9 @@ pdf_knowledge_chat_dir = os.path.join(current_dir, 'pdf_knowledge_chat')
 sys.path.append(pdf_knowledge_chat_dir)
 
 import urllib
-from configs.database_config import MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PW, MYSQL_DB, MYSQL_USER_TABLE, MYSQL_INVITATION_CODES_TABLE, MYSQL_ALGORITHM_TEMPLATES_TABLE, DEEPSEEK_API_KEY
+from configs.database_config import MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PW, MYSQL_DB, MYSQL_USER_TABLE, MYSQL_INVITATION_CODES_TABLE, MYSQL_ALGORITHM_TEMPLATES_TABLE, DEEPSEEK_API_KEY, MYSQL_PDF_TABLE
 from data_structure_kg_workspace.config_neo4j import NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD
-from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_from_directory
 from pdf_knowledge_chat.chat_session import ChatSession
 from dotenv import load_dotenv
 from datetime import datetime
@@ -22,6 +22,7 @@ import hashlib  # 用于密码哈希
 import secrets
 import re
 import os
+from flask import send_file
 load_dotenv()
 
 app = Flask(__name__)
@@ -842,9 +843,32 @@ def chat_page():
     if not is_user_logged_in():
         flash('请先登录')
         return redirect(url_for('login'))
+    pdfId = 1
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return render_template('chat_rag_content.html')  # 创建内容片段模板
-    return render_template('chat_rag.html')
+        return render_template('chat_rag_content.html', pdfId=pdfId)  # 创建内容片段模板
+    return render_template('chat_rag.html', pdfId=pdfId)
+
+
+@app.route('/get_pdf_path/<int:pdf_id>', methods=['GET'])
+def get_pdf_path(pdf_id):
+    if not is_user_logged_in():
+        flash('请先登录')
+        return redirect(url_for('login'))
+
+    with get_mysql_connection() as conn:
+        with conn.cursor() as cursor:
+            sql = f"SELECT pdf_path FROM {MYSQL_PDF_TABLE} WHERE id = %s"
+            cursor.execute(sql, (pdf_id,))
+            result = cursor.fetchone()
+            if result:
+                pdf_path = result['pdf_path']
+                full_path = os.path.join('data/pdf', os.path.basename(pdf_path))
+                if os.path.exists(full_path):
+                    return send_file(full_path, mimetype='application/pdf')
+                else:
+                    return jsonify({"error": "PDF 文件不存在"}), 404
+            else:
+                return jsonify({"error": "未找到对应的 PDF 文件"}), 404
 
 # 获取算法模板通过ID
 def get_algorithm_template_by_id(template_id):
