@@ -870,6 +870,10 @@ def get_pdf_path(pdf_id):
             else:
                 return jsonify({"error": "未找到对应的 PDF 文件"}), 404
 
+@app.route('/public/<path:filename>')
+def get_pdf(filename):
+    return send_from_directory('public', filename)
+
 # 获取算法模板通过ID
 def get_algorithm_template_by_id(template_id):
     return get_algorithm_template(template_id)
