@@ -59,3 +59,21 @@ CREATE TABLE ds_pdf (
     upload_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 ```
+
+```sql
+-- 创建用户对知识掌握情况
+CREATE TABLE IF NOT EXISTS user_knowledge_scores (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    linked_list INT DEFAULT 0 COMMENT '链表评分',
+    tree INT DEFAULT 0 COMMENT '树评分',
+    graph INT DEFAULT 0 COMMENT '图评分',
+    stack INT DEFAULT 0 COMMENT '栈评分',
+    queue INT DEFAULT 0 COMMENT '队列评分',
+    hash_table INT DEFAULT 0 COMMENT '哈希表评分',
+    heap INT DEFAULT 0 COMMENT '堆评分',
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后更新时间',
+    FOREIGN KEY (user_id) REFERENCES user_tb(id),
+    UNIQUE KEY unique_user_id (user_id)
+);
+```

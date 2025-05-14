@@ -41,34 +41,44 @@
             .content-auto {
                 content-visibility: auto;
             }
+
             .card-shadow {
                 box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
             }
+
             .input-focus {
                 @apply focus:ring-2 focus:ring-primary/50 focus:border-primary transition duration-200;
             }
+
             .sidebar-link {
                 @apply flex items-center p-3 rounded-lg text-gray-700 hover:bg-primary/10 hover:text-primary transition-all duration-200;
             }
+
             .sidebar-link.active {
                 @apply bg-primary/10 text-primary font-medium;
             }
+
             .btn-primary {
                 @apply px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition transform hover:-translate-y-0.5 hover:shadow-lg;
             }
+
             .btn-secondary {
                 @apply px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition transform hover:-translate-y-0.5 hover:shadow-lg;
             }
+
             .btn-danger {
                 @apply px-4 py-2 bg-danger text-white rounded-lg hover:bg-danger/90 transition transform hover:-translate-y-0.5 hover:shadow-lg;
             }
+
             .btn-success {
                 @apply px-4 py-2 bg-success text-white rounded-lg hover:bg-success/90 transition transform hover:-translate-y-0.5 hover:shadow-lg;
             }
+
             .form-input {
                 @apply w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition duration-200;
             }
         }
+
         #separator {
             width: 5px;
             background-color: #ccc;
@@ -78,158 +88,168 @@
 </head>
 
 <body class="font-inter bg-gray-50 text-gray-800 min-h-screen flex flex-col">
-    <!-- 顶部导航栏 -->
-    <header class="bg-white shadow-md sticky top-0 z-50">
-        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
-            <div class="flex items-center space-x-2">
-                <button id="sidebar-toggle" class="text-gray-600 hover:text-primary transition">
-                    <i class="fa fa-bars"></i>
-                </button>
-                <i class="fa fa-cogs text-admin text-2xl"></i>
-                <h1 class="text-xl font-bold text-gray-800">管理员面板</h1>
-            </div>
+<!-- 顶部导航栏 -->
+<header class="bg-white shadow-md sticky top-0 z-50">
+    <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+        <div class="flex items-center space-x-2">
+            <button id="sidebar-toggle" class="text-gray-600 hover:text-primary transition">
+                <i class="fa fa-bars"></i>
+            </button>
+            <i class="fa fa-cogs text-admin text-2xl"></i>
+            <h1 class="text-xl font-bold text-gray-800">管理员面板</h1>
+        </div>
 
-            <!-- 用户信息区域 -->
-            <div class="flex items-center space-x-4">
-                <!-- 主页按钮 -->
-                <a href="{{ url_for('main') }}" class="px-3 py-1.5 rounded-md text-gray-600 hover:bg-gray-100 hover:text-primary transition">
-                    <i class="fa fa-home mr-1"></i>主页
-                </a>
+        <!-- 用户信息区域 -->
+        <div class="flex items-center space-x-4">
+            <!-- 主页按钮 -->
+            <a href="{{ url_for('main') }}"
+               class="px-3 py-1.5 rounded-md text-gray-600 hover:bg-gray-100 hover:text-primary transition">
+                <i class="fa fa-home mr-1"></i>主页
+            </a>
 
-                <div class="relative group">
-                    <div class="flex items-center space-x-2 cursor-pointer">
-                        <!-- 删除管理员标签 -->
-                        <!-- <span class="px-2 py-1 rounded bg-admin/10 text-admin text-sm font-medium">管理员</span> -->
-                        <span class="text-gray-800 font-medium">{{ session.get('user', '未登录') }}</span>
-                        <i class="fa fa-chevron-down text-xs text-gray-500 group-hover:rotate-180 transition-transform duration-200"></i>
-                    </div>
+            <div class="relative group">
+                <div class="flex items-center space-x-2 cursor-pointer">
+                    <!-- 删除管理员标签 -->
+                    <!-- <span class="px-2 py-1 rounded bg-admin/10 text-admin text-sm font-medium">管理员</span> -->
+                    <span class="text-gray-800 font-medium">{{ session.get('user', '未登录') }}</span>
+                    <i class="fa fa-chevron-down text-xs text-gray-500 group-hover:rotate-180 transition-transform duration-200"></i>
+                </div>
 
-                    <!-- 下拉菜单 -->
-                    <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-right group-hover:translate-y-0 translate-y-2">
-                        <a href="{{ url_for('change_password') }}"
-                           class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                            <i class="fa fa-key mr-2"></i>重置密码
-                        </a>
-                        <a href="{{ url_for('logout') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                            <i class="fa fa-sign-out mr-2"></i>退出登录
-                        </a>
-                    </div>
+                <!-- 下拉菜单 -->
+                <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-right group-hover:translate-y-0 translate-y-2">
+                    <a href="{{ url_for('change_password') }}"
+                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                        <i class="fa fa-key mr-2"></i>重置密码
+                    </a>
+                    <a href="{{ url_for('logout') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                        <i class="fa fa-sign-out mr-2"></i>退出登录
+                    </a>
                 </div>
             </div>
         </div>
-    </header>
-
-    <!-- 主内容区域 -->
-    <div class="flex min-h-screen">
-        <!-- 左侧导航栏 -->
-        <aside id="sidebar" class="w-64 bg-white shadow-md p-6 h-screen sticky top-0 overflow-y-auto transition-all duration-300">
-            <h2 class="text-lg font-bold text-gray-800 mb-6">管理菜单</h2>
-            <ul class="space-y-1">
-                <li>
-                    <a href="{{ url_for('admin_algorithm_templates') }}" class="sidebar-link {% if request.endpoint == 'admin_algorithm_templates' %}active{% endif %}">
-                        <i class="fa fa-code mr-3"></i>
-                        <span>算法模板管理</span>
-                    </a>
-                </li>
-                <!-- 可以添加更多管理菜单项 -->
-                <li>
-                    <a href="#" class="sidebar-link">
-                        <i class="fa fa-users mr-3"></i>
-                        <span>用户管理</span>
-                    </a>
-                </li>
-                <li>
-                    <a href="#" class="sidebar-link">
-                        <i class="fa fa-bar-chart mr-3"></i>
-                        <span>系统统计</span>
-                    </a>
-                </li>
-            </ul>
-        </aside>
-        <!-- 分隔条 -->
-        <div id="separator"></div>
-        <!-- 右侧内容区 -->
-        <main id="main-content" class="flex-1 p-6 overflow-y-auto transition-all duration-300">
-            <div class="max-w-7xl mx-auto">
-                <!-- 页面标题 -->
-                <div class="mb-8">
-                    <h1 class="text-3xl font-bold text-gray-800 mb-2">{{ page_title }}</h1>
-                    <p class="text-gray-600">{{ page_description }}</p>
-                </div>
-
-                <!-- 内容区域 -->
-                <div class="bg-white rounded-xl shadow-card p-6 mb-6">
-                    {% block content %}{% endblock %}
-                </div>
-            </div>
-        </main>
     </div>
+</header>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // 为卡片添加悬停效果
-            const cards = document.querySelectorAll('.card-hover');
-            cards.forEach(card => {
-                card.addEventListener('mouseenter', function() {
-                    this.classList.add('shadow-card-hover', '-translate-y-1');
-                });
-                card.addEventListener('mouseleave', function() {
-                    this.classList.remove('shadow-card-hover', '-translate-y-1');
-                });
+<!-- 主内容区域 -->
+<div class="flex min-h-screen">
+    <!-- 左侧导航栏 -->
+    <aside id="sidebar"
+           class="w-64 bg-white shadow-md p-6 h-screen sticky top-0 overflow-y-auto transition-all duration-300">
+        <h2 class="text-lg font-bold text-gray-800 mb-6">管理菜单</h2>
+        <ul class="space-y-1">
+            <li>
+                <a href="{{ url_for('admin_algorithm_templates') }}"
+                   class="sidebar-link {% if request.endpoint == 'admin_algorithm_templates' %}active{% endif %}">
+                    <i class="fa fa-code mr-3"></i>
+                    <span>算法模板管理</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('admin_user_knowledge_scores') }}"
+                   class="sidebar-link {% if request.endpoint == 'admin_user_knowledge_scores' %}active{% endif %}">
+                    <i class="fa fa-users mr-3"></i>
+                    <span>用户知识掌握程度打分管理</span>
+                </a>
+            </li>
+            <!-- 可以添加更多管理菜单项 -->
+            <li>
+                <a href="#" class="sidebar-link">
+                    <i class="fa fa-users mr-3"></i>
+                    <span>用户管理</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" class="sidebar-link">
+                    <i class="fa fa-bar-chart mr-3"></i>
+                    <span>系统统计</span>
+                </a>
+            </li>
+        </ul>
+    </aside>
+    <!-- 分隔条 -->
+    <div id="separator"></div>
+    <!-- 右侧内容区 -->
+    <main id="main-content" class="flex-1 p-6 overflow-y-auto transition-all duration-300">
+        <div class="max-w-7xl mx-auto">
+            <!-- 页面标题 -->
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">{{ page_title }}</h1>
+                <p class="text-gray-600">{{ page_description }}</p>
+            </div>
+
+            <!-- 内容区域 -->
+            <div class="bg-white rounded-xl shadow-card p-6 mb-6">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // 为卡片添加悬停效果
+        const cards = document.querySelectorAll('.card-hover');
+        cards.forEach(card => {
+            card.addEventListener('mouseenter', function () {
+                this.classList.add('shadow-card-hover', '-translate-y-1');
             });
-
-            // 平滑滚动
-            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-                anchor.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    document.querySelector(this.getAttribute('href')).scrollIntoView({
-                        behavior: 'smooth'
-                    });
-                });
-            });
-
-            // 处理侧边栏收缩
-            const sidebar = document.getElementById('sidebar');
-            const mainContent = document.getElementById('main-content');
-            const sidebarToggle = document.getElementById('sidebar-toggle');
-
-            sidebarToggle.addEventListener('click', function() {
-                if (sidebar.classList.contains('w-64')) {
-                    sidebar.classList.remove('w-64');
-                    sidebar.classList.add('w-0', 'p-0');
-                    mainContent.classList.add('pl-0');
-                } else {
-                    sidebar.classList.remove('w-0', 'p-0');
-                    sidebar.classList.add('w-64');
-                    mainContent.classList.remove('pl-0');
-                }
-            });
-
-            // 处理侧边栏宽度缩放
-            const separator = document.getElementById('separator');
-            let isDragging = false;
-            let startX;
-            let startWidth;
-
-            separator.addEventListener('mousedown', (e) => {
-                isDragging = true;
-                startX = e.clientX;
-                startWidth = sidebar.offsetWidth;
-            });
-
-            document.addEventListener('mousemove', (e) => {
-                if (isDragging) {
-                    const deltaX = e.clientX - startX;
-                    const newWidth = startWidth + deltaX;
-                    sidebar.style.width = newWidth + 'px';
-                }
-            });
-
-            document.addEventListener('mouseup', () => {
-                isDragging = false;
+            card.addEventListener('mouseleave', function () {
+                this.classList.remove('shadow-card-hover', '-translate-y-1');
             });
         });
-    </script>
+
+        // 平滑滚动
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // 处理侧边栏收缩
+        const sidebar = document.getElementById('sidebar');
+        const mainContent = document.getElementById('main-content');
+        const sidebarToggle = document.getElementById('sidebar-toggle');
+
+        sidebarToggle.addEventListener('click', function () {
+            if (sidebar.classList.contains('w-64')) {
+                sidebar.classList.remove('w-64');
+                sidebar.classList.add('w-0', 'p-0');
+                mainContent.classList.add('pl-0');
+            } else {
+                sidebar.classList.remove('w-0', 'p-0');
+                sidebar.classList.add('w-64');
+                mainContent.classList.remove('pl-0');
+            }
+        });
+
+        // 处理侧边栏宽度缩放
+        const separator = document.getElementById('separator');
+        let isDragging = false;
+        let startX;
+        let startWidth;
+
+        separator.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            startX = e.clientX;
+            startWidth = sidebar.offsetWidth;
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                const deltaX = e.clientX - startX;
+                const newWidth = startWidth + deltaX;
+                sidebar.style.width = newWidth + 'px';
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+    });
+</script>
 </body>
 
 </html>

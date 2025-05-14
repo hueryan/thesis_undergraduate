@@ -1,6 +1,9 @@
+from json import JSONDecodeError
 import sys
 import os
 import asyncio
+import json
+import logging
 # 获取当前脚本所在目录
 current_dir = os.path.dirname(os.path.abspath(__file__))
 # 构建 milvus_manager.py等 所在目录的路径
@@ -9,7 +12,7 @@ pdf_knowledge_chat_dir = os.path.join(current_dir, 'pdf_knowledge_chat')
 sys.path.append(pdf_knowledge_chat_dir)
 
 import urllib
-from configs.database_config import MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PW, MYSQL_DB, MYSQL_USER_TABLE, MYSQL_INVITATION_CODES_TABLE, MYSQL_ALGORITHM_TEMPLATES_TABLE, DEEPSEEK_API_KEY, MYSQL_PDF_TABLE
+from configs.database_config import MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PW, MYSQL_DB, MYSQL_USER_TABLE, MYSQL_INVITATION_CODES_TABLE, MYSQL_ALGORITHM_TEMPLATES_TABLE, DEEPSEEK_API_KEY, MYSQL_PDF_TABLE, MYSQL_USER_KNOWLEDGE_SCORES
 from data_structure_kg_workspace.config_neo4j import NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_from_directory
 from pdf_knowledge_chat.chat_session import ChatSession
@@ -52,6 +55,15 @@ def get_mysql_connection():
         cursorclass=pymysql.cursors.DictCursor
     )
 
+# 无限缓存装饰器
+def unlimited_cache(func):
+    cache = {}
+    async def wrapper(*args, **kwargs):
+        key = (args, tuple(sorted(kwargs.items())))
+        if key not in cache:
+            cache[key] = await func(*args, **kwargs)
+        return cache[key]
+    return wrapper
 
 # 密码哈希函数
 def hash_password(password):
@@ -824,19 +836,212 @@ def admin_edit_algorithm_template(template_id):
 
     return render_template('admin/algorithm_template_edit.html', template=template)
 
+
+# 管理员查看用户知识掌握程度打分
+@app.route('/admin/user-knowledge-scores', methods=['GET'])
+def admin_user_knowledge_scores():
+    if not is_user_logged_in() or session.get('role') != -1:
+        flash('权限不足', 'error')
+        return redirect(url_for('main'))
+
+    search_query = request.args.get('search', '').strip()
+    page = int(request.args.get('page', 1))
+    per_page = 8
+
+    with get_mysql_connection() as conn:
+        with conn.cursor() as cursor:
+            base_sql = f"FROM {MYSQL_USER_KNOWLEDGE_SCORES} JOIN {MYSQL_USER_TABLE} ON {MYSQL_USER_KNOWLEDGE_SCORES}.user_id = {MYSQL_USER_TABLE}.id"
+
+            if search_query:
+                base_sql += f" WHERE {MYSQL_USER_TABLE}.username LIKE %s"
+                search_param = f"%{search_query}%"
+                params = (search_param,)
+            else:
+                params = ()
+
+            sql_count = f"SELECT COUNT(*) as total {base_sql}"
+            cursor.execute(sql_count, params)
+            total = cursor.fetchone()['total']
+
+            total_pages = (total + per_page - 1) // per_page
+
+            if page < 1:
+                page = 1
+            elif page > total_pages:
+                page = total_pages
+
+            offset = (page - 1) * per_page
+            # 确保 offset 不会为负数
+            offset = max(0, offset)
+
+            sql = f"SELECT {MYSQL_USER_KNOWLEDGE_SCORES}.*, {MYSQL_USER_TABLE}.username {base_sql} ORDER BY {MYSQL_USER_KNOWLEDGE_SCORES}.id DESC LIMIT {offset}, {per_page}"
+            cursor.execute(sql, params)
+            scores = cursor.fetchall()
+
+    has_prev = page > 1
+    has_next = page < total_pages
+    prev_num = page - 1 if has_prev else None
+    next_num = page + 1 if has_next else None
+
+    pagination = {
+        'page': page,
+        'per_page': per_page,
+        'total': total,
+        'pages': total_pages,
+        'has_prev': has_prev,
+        'has_next': has_next,
+        'prev_num': prev_num,
+        'next_num': next_num
+    }
+
+    return render_template('admin/user_knowledge_scores_list.html',
+                           scores=scores,
+                           pagination=pagination,
+                           search_query=search_query)
+
+# 新增函数：调用大模型进行知识评分
+async def async_call_large_model_to_score_knowledge(question):
+    llm = ChatOpenAI(
+        openai_api_base="https://api.deepseek.com/v1",
+        openai_api_key=DEEPSEEK_API_KEY,
+        model_name="deepseek-chat"
+    )
+    prompt = f"""
+    请根据以下用户提问，对用户的数据结构知识进行打分。要求：
+    1. 仅对提问涉及的知识点评分
+    2. 输出严格JSON格式如 {{"树":85}}
+    3. 有效模块：链表、树、图、栈、队列、哈希表、堆
+    4. 根据问题客观的给出分数，必须客观的打分，我要用这个去记录学生对知识的掌握程度，方便学生后续学习
+
+    用户提问：{question}
+    """
+    try:
+        response = await asyncio.to_thread(llm.invoke, prompt)
+        json_str = re.search(r'\{.*?\}', response.content, re.DOTALL).group()
+        scores = json.loads(json_str)
+        valid_modules = {"链表", "树", "图", "栈", "队列", "哈希表", "堆"}
+        return {k: min(max(int(v), 0), 100) for k, v in scores.items() if k in valid_modules}  # 分数限制在0-100
+    except Exception as e:
+        logging.error(f"评分失败: {str(e)}")
+        return {}
+
+
 @app.route('/main/chat', methods=['POST'])
-def chat():
+async def chat():
     data = request.get_json()
     question = data.get('question')
     if not question:
-        return jsonify({"error": "Missing question"}), 400
+        return jsonify({"error": "问题不能为空"}), 400
 
-    session = ChatSession()
-    answer = session.generate_answer(question)
+    # 获取当前评分（仅本次提问涉及的模块）
+    new_scores = await async_call_large_model_to_score_knowledge(question)
+    if not new_scores:
+        return jsonify({"error": "无法生成评分"}), 500
 
-    # 保留换行符并转义特殊字符
-    formatted_answer = answer.replace('\n', '  \n')  # Markdown换行语法
-    return jsonify({"answer": formatted_answer})
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({"error": "未登录"}), 401
+
+    try:
+        connection = get_mysql_connection()
+        with connection.cursor() as cursor:
+            connection.begin()
+
+            # 检查用户记录是否存在
+            cursor.execute(f"SELECT * FROM user_knowledge_scores WHERE user_id = %s", (user_id,))
+            user_record = cursor.fetchone()
+
+            if user_record:
+                # 更新现有记录
+                update_fields = []
+                values = []
+                for module, score in new_scores.items():
+                    if module == '链表':
+                        update_fields.append('linked_list = %s')
+                    elif module == '树':
+                        update_fields.append('tree = %s')
+                    elif module == '图':
+                        update_fields.append('graph = %s')
+                    elif module == '栈':
+                        update_fields.append('stack = %s')
+                    elif module == '队列':
+                        update_fields.append('queue = %s')
+                    elif module == '哈希表':
+                        update_fields.append('hash_table = %s')
+                    elif module == '堆':
+                        update_fields.append('heap = %s')
+                    values.append(score)
+                values.append(user_id)
+
+                if update_fields:
+                    update_sql = f"UPDATE user_knowledge_scores SET {', '.join(update_fields)} WHERE user_id = %s"
+                    cursor.execute(update_sql, values)
+            else:
+                # 插入新记录
+                columns = []
+                values = []
+                for module, score in new_scores.items():
+                    if module == '链表':
+                        columns.append('linked_list')
+                    elif module == '树':
+                        columns.append('tree')
+                    elif module == '图':
+                        columns.append('graph')
+                    elif module == '栈':
+                        columns.append('stack')
+                    elif module == '队列':
+                        columns.append('queue')
+                    elif module == '哈希表':
+                        columns.append('hash_table')
+                    elif module == '堆':
+                        columns.append('heap')
+                    values.append(score)
+                columns.extend(['user_id'])
+                values.extend([user_id])
+
+                insert_sql = f"INSERT INTO user_knowledge_scores ({', '.join(columns)}) VALUES ({', '.join(['%s'] * len(values))})"
+                cursor.execute(insert_sql, values)
+
+            connection.commit()
+
+        # 获取更新后的全部分数
+        with connection.cursor() as cursor:
+            cursor.execute(
+                f"SELECT linked_list, tree, graph, stack, queue, hash_table, heap FROM user_knowledge_scores WHERE user_id = %s",
+                (user_id,)
+            )
+            all_scores = cursor.fetchone()
+            if all_scores:
+                all_scores = {
+                    '链表': all_scores['linked_list'],
+                    '树': all_scores['tree'],
+                    '图': all_scores['graph'],
+                    '栈': all_scores['stack'],
+                    '队列': all_scores['queue'],
+                    '哈希表': all_scores['hash_table'],
+                    '堆': all_scores['heap']
+                }
+            else:
+                all_scores = {}
+
+    except pymysql.Error as e:
+        connection.rollback()
+        logging.error(f"数据库错误: {str(e)}")
+        return jsonify({"error": f"存储失败: {str(e)}"}), 500
+    except Exception as e:
+        logging.error(f"系统错误: {str(e)}")
+        return jsonify({"error": "服务器内部错误"}), 500
+    finally:
+        connection.close()
+
+    # 后续聊天逻辑
+    chat_session = ChatSession()
+    answer = chat_session.generate_answer(question)
+    return jsonify({
+        "answer": answer.replace('\n', '  \n'),
+        "scores": all_scores
+    })
+
 
 @app.route('/main/chat-page')
 def chat_page():
@@ -878,15 +1083,7 @@ def get_pdf(filename):
 def get_algorithm_template_by_id(template_id):
     return get_algorithm_template(template_id)
 
-# 无限缓存装饰器
-def unlimited_cache(func):
-    cache = {}
-    async def wrapper(*args, **kwargs):
-        key = (args, tuple(sorted(kwargs.items())))
-        if key not in cache:
-            cache[key] = await func(*args, **kwargs)
-        return cache[key]
-    return wrapper
+
 
 # 调用大模型生成代码解释
 @unlimited_cache
