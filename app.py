@@ -935,104 +935,106 @@ async def chat():
 
     # 获取当前评分（仅本次提问涉及的模块）
     new_scores = await async_call_large_model_to_score_knowledge(question)
-    if not new_scores:
-        return jsonify({"error": "无法生成评分"}), 500
+    # if not new_scores:
+    #     return jsonify({"error": "无法生成评分"}), 500
 
     user_id = session.get('user_id')
     if not user_id:
         return jsonify({"error": "未登录"}), 401
 
-    try:
-        connection = get_mysql_connection()
-        with connection.cursor() as cursor:
-            connection.begin()
+    all_scores = {}
+    if new_scores:
+        try:
+            connection = get_mysql_connection()
+            with connection.cursor() as cursor:
+                connection.begin()
 
-            # 检查用户记录是否存在
-            cursor.execute(f"SELECT * FROM user_knowledge_scores WHERE user_id = %s", (user_id,))
-            user_record = cursor.fetchone()
+                # 检查用户记录是否存在
+                cursor.execute(f"SELECT * FROM user_knowledge_scores WHERE user_id = %s", (user_id,))
+                user_record = cursor.fetchone()
 
-            if user_record:
-                # 更新现有记录
-                update_fields = []
-                values = []
-                for module, score in new_scores.items():
-                    if module == '链表':
-                        update_fields.append('linked_list = %s')
-                    elif module == '树':
-                        update_fields.append('tree = %s')
-                    elif module == '图':
-                        update_fields.append('graph = %s')
-                    elif module == '栈':
-                        update_fields.append('stack = %s')
-                    elif module == '队列':
-                        update_fields.append('queue = %s')
-                    elif module == '哈希表':
-                        update_fields.append('hash_table = %s')
-                    elif module == '堆':
-                        update_fields.append('heap = %s')
-                    values.append(score)
-                values.append(user_id)
+                if user_record:
+                    # 更新现有记录
+                    update_fields = []
+                    values = []
+                    for module, score in new_scores.items():
+                        if module == '链表':
+                            update_fields.append('linked_list = %s')
+                        elif module == '树':
+                            update_fields.append('tree = %s')
+                        elif module == '图':
+                            update_fields.append('graph = %s')
+                        elif module == '栈':
+                            update_fields.append('stack = %s')
+                        elif module == '队列':
+                            update_fields.append('queue = %s')
+                        elif module == '哈希表':
+                            update_fields.append('hash_table = %s')
+                        elif module == '堆':
+                            update_fields.append('heap = %s')
+                        values.append(score)
+                    values.append(user_id)
 
-                if update_fields:
-                    update_sql = f"UPDATE user_knowledge_scores SET {', '.join(update_fields)} WHERE user_id = %s"
-                    cursor.execute(update_sql, values)
-            else:
-                # 插入新记录
-                columns = []
-                values = []
-                for module, score in new_scores.items():
-                    if module == '链表':
-                        columns.append('linked_list')
-                    elif module == '树':
-                        columns.append('tree')
-                    elif module == '图':
-                        columns.append('graph')
-                    elif module == '栈':
-                        columns.append('stack')
-                    elif module == '队列':
-                        columns.append('queue')
-                    elif module == '哈希表':
-                        columns.append('hash_table')
-                    elif module == '堆':
-                        columns.append('heap')
-                    values.append(score)
-                columns.extend(['user_id'])
-                values.extend([user_id])
+                    if update_fields:
+                        update_sql = f"UPDATE user_knowledge_scores SET {', '.join(update_fields)} WHERE user_id = %s"
+                        cursor.execute(update_sql, values)
+                else:
+                    # 插入新记录
+                    columns = []
+                    values = []
+                    for module, score in new_scores.items():
+                        if module == '链表':
+                            columns.append('linked_list')
+                        elif module == '树':
+                            columns.append('tree')
+                        elif module == '图':
+                            columns.append('graph')
+                        elif module == '栈':
+                            columns.append('stack')
+                        elif module == '队列':
+                            columns.append('queue')
+                        elif module == '哈希表':
+                            columns.append('hash_table')
+                        elif module == '堆':
+                            columns.append('heap')
+                        values.append(score)
+                    columns.extend(['user_id'])
+                    values.extend([user_id])
 
-                insert_sql = f"INSERT INTO user_knowledge_scores ({', '.join(columns)}) VALUES ({', '.join(['%s'] * len(values))})"
-                cursor.execute(insert_sql, values)
+                    insert_sql = f"INSERT INTO user_knowledge_scores ({', '.join(columns)}) VALUES ({', '.join(['%s'] * len(values))})"
+                    cursor.execute(insert_sql, values)
 
-            connection.commit()
+                connection.commit()
 
-        # 获取更新后的全部分数
-        with connection.cursor() as cursor:
-            cursor.execute(
-                f"SELECT linked_list, tree, graph, stack, queue, hash_table, heap FROM user_knowledge_scores WHERE user_id = %s",
-                (user_id,)
-            )
-            all_scores = cursor.fetchone()
-            if all_scores:
-                all_scores = {
-                    '链表': all_scores['linked_list'],
-                    '树': all_scores['tree'],
-                    '图': all_scores['graph'],
-                    '栈': all_scores['stack'],
-                    '队列': all_scores['queue'],
-                    '哈希表': all_scores['hash_table'],
-                    '堆': all_scores['heap']
-                }
-            else:
-                all_scores = {}
+            # 获取更新后的全部分数
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    f"SELECT linked_list, tree, graph, stack, queue, hash_table, heap FROM user_knowledge_scores WHERE user_id = %s",
+                    (user_id,)
+                )
+                all_scores = cursor.fetchone()
+                if all_scores:
+                    all_scores = {
+                        '链表': all_scores['linked_list'],
+                        '树': all_scores['tree'],
+                        '图': all_scores['graph'],
+                        '栈': all_scores['stack'],
+                        '队列': all_scores['queue'],
+                        '哈希表': all_scores['hash_table'],
+                        '堆': all_scores['heap']
+                    }
+                else:
+                    all_scores = {}
 
-    except pymysql.Error as e:
-        connection.rollback()
-        logging.error(f"数据库错误: {str(e)}")
-        return jsonify({"error": f"存储失败: {str(e)}"}), 500
-    except Exception as e:
-        logging.error(f"系统错误: {str(e)}")
-        return jsonify({"error": "服务器内部错误"}), 500
-    finally:
-        connection.close()
+        except pymysql.Error as e:
+            connection.rollback()
+            logging.error(f"数据库错误: {str(e)}")
+            return jsonify({"error": f"存储失败: {str(e)}"}), 500
+        except Exception as e:
+            logging.error(f"系统错误: {str(e)}")
+            return jsonify({"error": "服务器内部错误"}), 500
+        finally:
+            connection.close()
 
     # 后续聊天逻辑
     chat_session = ChatSession()
