@@ -123,25 +123,9 @@
             try {
                 // 获取原始内容（确保使用正确的Jinja转义）
                 const rawMarkdown = {{ template.code|tojson|safe }};
-
-                // 安全过滤
-                const cleanMarkdown = DOMPurify.sanitize(rawMarkdown);
-
-                // 配置Markdown解析
-                marked.setOptions({
-                    highlight: function (code, lang) {
-                        const validLang = hljs.getLanguage(lang) ? lang : 'plaintext';
-                        return hljs.highlight(code, {
-                            language: validLang,
-                            ignoreIllegals: true
-                        }).value;
-                    },
-                    breaks: true,
-                    gfm: true
-                });
-
+                
                 // 转换为HTML
-                const htmlContent = marked.parse(cleanMarkdown);
+                const htmlContent = marked.parse(rawMarkdown);
 
                 // 插入容器
                 const container = document.getElementById('markdown-content');
