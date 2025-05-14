@@ -964,7 +964,21 @@ async def async_call_large_model_to_generate_executable_example(code):
         model_name="deepseek-chat"
     )
     # 构建提示信息
-    prompt = f"请根据以下算法代码给出一个可以直接执行的例子并在代码中加上注解：\n{code}"
+    prompt = f"请根据以下算法代码给出一个可以直接执行的例子只生成可运行的代码，无需任何注释，注解：\n{code}"
+    # 调用模型生成可执行例子
+    response = await asyncio.to_thread(llm.invoke, prompt)
+    return response.content
+
+@unlimited_cache
+async def async_call_large_model_to_generate_executable_example_explain(code):
+    # 初始化 DeepSeek 模型
+    llm = ChatOpenAI(
+        openai_api_base="https://api.deepseek.com/v1",
+        openai_api_key=DEEPSEEK_API_KEY,
+        model_name="deepseek-chat"
+    )
+    # 构建提示信息
+    prompt = f"请根据以下例子代码，直接代码中生成注释注解：\n{code}"
     # 调用模型生成可执行例子
     response = await asyncio.to_thread(llm.invoke, prompt)
     return response.content
@@ -1010,8 +1024,6 @@ async def get_algorithm_executable_example(template_id):
             lang = (code_match.group(1) or 'plaintext').lower()
             code_content = code_match.group(2).strip()  # 去除首尾空格
 
-
-
         # 映射语言到Python Tutor环境
         lang_mapping = {
             'python': '3',
@@ -1028,8 +1040,34 @@ async def get_algorithm_executable_example(template_id):
 
         tutor_url = f'https://pythontutor.com/iframe-embed.html#code={encoded_code}&codeDivHeight=800&codeDivWidth=600&cumulative=false&curInstr=3&heapPrimitives=nevernest&origin=opt-frontend.js&py={tutor_lang}&rawInputLstJSON=%5B%5D&textReferences=false'
         # tutor_url = f'https://pythontutor.com/iframe-embed.html#code={encoded_code}&cumulative=false&curInstr=3&heapPrimitives=nevernest&origin=opt-frontend.js&py={tutor_lang}&rawInputLstJSON=%5B%5D&textReferences=false'
+
+
+        executable_example_explain = await async_call_large_model_to_generate_executable_example_explain(code_content)
+        if executable_example_explain:
+            # 提取代码块的语言和内容
+            code_explain_match = re.search(
+                r'```\s*?(\w+)?\s*?\n(.*?)```',  # 允许语言标识可选、前后空格
+                executable_example_explain,
+                re.DOTALL | re.IGNORECASE  # 支持多行匹配且忽略大小写
+            )
+            if not code_explain_match:
+                # 尝试匹配无语言标识的代码块
+                code_explain_match = re.search(
+                    r'```\s*?\n(.*?)```',
+                    executable_example_explain,
+                    re.DOTALL
+                )
+                if code_explain_match:
+                    lang = 'plaintext'
+                    code_explain_content = code_explain_match.group(1).strip()
+                else:
+                    return jsonify({"error": f"代码格式解析失败，原始内容：{executable_example_explain[:100]}..."}), 400
+            else:
+                lang = (code_explain_match.group(1) or 'plaintext').lower()
+                code_explain_content = code_explain_match.group(2).strip()  # 去除首尾空格
+
         return jsonify({
-            "executable_example": code_content,
+            "executable_example": code_explain_content,
             "tutor_url": tutor_url,
             "language": lang
         })
