@@ -213,10 +213,17 @@
                 <button id="open-textbook-btn" class="ml-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
                     打开教材
                 </button>
-                <button id="close-textbook-btn" class="ml-2 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 hidden">
+                <button id="close-textbook-btn"
+                        class="ml-2 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 hidden">
                     收起教材
                 </button>
             </div>
+            <!-- 浮动按钮容器（默认隐藏） -->
+            <div id="pdf-chat-float-btn"
+                 style="position:absolute; display:none; z-index:9999; background:#4f46e5; color:white; padding:6px 10px; border-radius:6px; font-size:14px; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.2);">
+                试试 Chat？
+            </div>
+
 
             <!-- 聊天消息区域 -->
             <div class="chat-messages flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50" id="chat-messages">
@@ -412,8 +419,8 @@
                     // 获取语言类型
                     const codeElement = preElement.querySelector('code');
                     const language = Array.from(codeElement.classList)
-                        .find(c => c.startsWith('language-'))
-                        ?.replace('language-', '')
+                            .find(c => c.startsWith('language-'))
+                            ?.replace('language-', '')
                         || 'text';
 
                     // 创建新按钮
@@ -485,5 +492,45 @@
                 closeTextbookBtn.classList.add('hidden');
             });
         });
+    </script>
+    <script>
+    const pdfIframe = document.getElementById('pdf-iframe');
+const floatBtn = document.getElementById('pdf-chat-float-btn');
+
+pdfIframe.onload = () => {
+    const pdfIframeDoc = pdfIframe.contentDocument || pdfIframe.contentWindow.document;
+
+    pdfIframeDoc.addEventListener('mouseup', () => {
+        setTimeout(() => {
+            const selection = pdfIframeDoc.getSelection();
+            const text = selection.toString().trim();
+
+            if (text.length === 0) {
+                floatBtn.style.display = 'none';
+                return;
+            }
+
+            const range = selection.getRangeAt(0);
+            const rect = range.getBoundingClientRect();
+            const iframeRect = pdfIframe.getBoundingClientRect();
+
+            floatBtn.style.top = `${rect.bottom + iframeRect.top}px`;
+            floatBtn.style.left = `${rect.left + iframeRect.left}px`;
+            floatBtn.style.display = 'block';
+
+            floatBtn.onclick = () => {
+                // 填充到输入框
+                document.getElementById('message-input').value = text;
+                document.getElementById('message-input').focus();
+                floatBtn.style.display = 'none';
+            };
+        }, 50); // 等待 PDF.js 处理选区
+    });
+
+    pdfIframeDoc.addEventListener('click', () => {
+        floatBtn.style.display = 'none';
+    });
+};
+
     </script>
 {% endblock %}
